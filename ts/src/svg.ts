@@ -29,6 +29,7 @@ const AR = 10      // loop rail inset
 const PAD = 16     // outer padding
 const TITLE_H = 26 // height reserved for a rule title
 const TRACK_GAP = 34
+const LEAD = 14    // rail lead between a cap dot and the content
 
 
 export type SvgOptions = {
@@ -253,14 +254,23 @@ function svgDoc(body: string, w: number, h: number): string {
 }
 
 
+// Draw a layout with entry/exit cap dots, separated from the content by a
+// short rail lead so the dots never sit on top of a box.
+function withCaps(L: VLayout, x: number, top: number): string {
+  const ct = top + LEAD
+  const cb = ct + L.height
+  const ex = x + L.entryX, xx = x + L.exitX
+  return (
+    cap(ex, top) + vline(ex, top, ct) +
+    L.draw(x, ct) +
+    vline(xx, cb, cb + LEAD) + cap(xx, cb + LEAD)
+  )
+}
+
 // Render a single node (wrapped in its own SVG document).
 export function renderNodeSvg(node: Item, opts: SvgOptions = {}): string {
   const L = layoutNode(norm(node), opts)
-  const body =
-    cap(PAD + L.entryX, PAD) +
-    L.draw(PAD, PAD) +
-    cap(PAD + L.exitX, PAD + L.height)
-  return svgDoc(body, L.width + 2 * PAD, L.height + 2 * PAD)
+  return svgDoc(withCaps(L, PAD, PAD), L.width + 2 * PAD, L.height + 2 * LEAD + 2 * PAD)
 }
 
 
@@ -271,24 +281,47 @@ export function modelToSvg(model: GrammarModel, _opts: SvgOptions = {}): string 
   const linkFor = (name: string) => (ruleNames.has(name) ? '#' + name : undefined)
   const opts: SvgOptions = { linkFor }
 
+  // Measure each rule track (title + capped diagram).
   const order = orderRules(model)
-  let y = PAD
-  let maxW = 0
-  let body = ''
-  for (const name of order) {
+  type Track = { name: string; L: VLayout; h: number }
+  const tracks: Track[] = order.map((name) => {
     const L = layoutNode(model.rules[name], opts)
-    const titleY = y
-    const dy = titleY + TITLE_H
-    body += `<g id="${esc(name)}">`
-    body += `<text class="rr-title" x="${PAD}" y="${titleY + 15}">${esc(name)}</text>`
-    body += cap(PAD + L.entryX, dy)
-    body += L.draw(PAD, dy)
-    body += cap(PAD + L.exitX, dy + L.height)
-    body += `</g>`
-    maxW = Math.max(maxW, PAD + L.width)
-    y = dy + L.height + TRACK_GAP
+    return { name, L, h: TITLE_H + L.height + 2 * LEAD }
+  })
+
+  // Lay the tracks out in two newspaper-style columns (filled top to
+  // bottom, balanced by height), using the available horizontal space.
+  const twoCol = tracks.length > 1
+  const total = tracks.reduce((a, t) => a + t.h + TRACK_GAP, 0)
+  const cols: Track[][] = [[], []]
+  let acc = 0, ci = 0
+  for (const t of tracks) {
+    cols[ci].push(t)
+    acc += t.h + TRACK_GAP
+    if (twoCol && 0 === ci && acc >= total / 2) ci = 1
   }
-  return svgDoc(body, maxW + PAD, y - TRACK_GAP + PAD)
+
+  const COLGAP = 48
+  let x = PAD
+  let pageH = 0
+  let body = ''
+  for (const col of cols) {
+    if (0 === col.length) continue
+    let y = PAD
+    let colW = 0
+    for (const t of col) {
+      const dy = y + TITLE_H
+      body += `<g id="${esc(t.name)}">`
+      body += `<text class="rr-title" x="${x}" y="${y + 15}">${esc(t.name)}</text>`
+      body += withCaps(t.L, x, dy)
+      body += `</g>`
+      colW = Math.max(colW, t.L.width)
+      y = dy + t.L.height + 2 * LEAD + TRACK_GAP
+    }
+    pageH = Math.max(pageH, y - TRACK_GAP)
+    x += colW + COLGAP
+  }
+  return svgDoc(body, x - COLGAP + PAD, pageH + PAD)
 }
 
 function orderRules(model: GrammarModel): string[] {
