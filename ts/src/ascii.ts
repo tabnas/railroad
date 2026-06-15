@@ -131,7 +131,7 @@ function seqM(children: M[]): M {
     paint(cv, x, y) {
       let cy = y
       children.forEach((c, i) => {
-        if (i > 0) { cv.vline(cy - VG - 1 + 1, cy, x + railCol) }
+        if (i > 0) { cv.vline(cy - VG - 1, cy, x + railCol) }
         c.paint(cv, x + offs[i], cy)
         cy += c.rows + VG
       })
@@ -145,17 +145,18 @@ function choiceM(branches: M[]): M {
   const cols = branches.reduce((a, c) => a + c.cols, 0) + HG * (n - 1)
   const maxR = Math.max(...branches.map((c) => c.rows))
   const rows = 1 + maxR + 1
-  const entryCol = Math.floor(cols / 2)
   const bxs: number[] = []
   let bx = 0
   branches.forEach((c) => { bxs.push(bx); bx += c.cols + HG })
+  const relCenters = branches.map((c, i) => bxs[i] + c.entryCol)
+  const entryCol = Math.round((relCenters[0] + relCenters[n - 1]) / 2)
   return {
     cols, rows, entryCol, exitCol: entryCol,
     paint(cv, x, y) {
       const splitRow = y
       const branchTop = y + 1
       const mergeRow = y + 1 + maxR
-      const centers = branches.map((c, i) => x + bxs[i] + c.entryCol)
+      const centers = relCenters.map((c) => x + c)
       const lo = Math.min(x + entryCol, ...centers)
       const hi = Math.max(x + entryCol, ...centers)
       cv.hline(lo, hi, splitRow)
@@ -226,9 +227,11 @@ export function renderNodeAscii(node: Item, opts: AsciiOptions = {}): string {
   const G = glyphs(plain)
   const cv = new Canvas()
   const m = measure(norm(node), G)
-  // top + bottom rail caps
+  // top + bottom rail caps, joined into the node's entry/exit cells
   cv.line(0, m.entryCol, D)
   m.paint(cv, 0, 1)
+  cv.line(1, m.entryCol, U)
+  cv.line(m.rows, m.exitCol, D)
   cv.line(m.rows + 1, m.exitCol, U)
   return cv.render(plain)
 }
@@ -245,6 +248,8 @@ export function modelToAscii(model: GrammarModel, opts: AsciiOptions = {}): stri
     const m = measure(model.rules[name], G)
     cv.line(0, m.entryCol, D)
     m.paint(cv, 0, 1)
+    cv.line(1, m.entryCol, U)
+    cv.line(m.rows, m.exitCol, D)
     cv.line(m.rows + 1, m.exitCol, U)
     const diagram = cv.render(plain)
     blocks.push(name + ':\n' + diagram)
