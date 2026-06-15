@@ -41,6 +41,7 @@ type VLayout = {
   height: number
   entryX: number
   exitX: number
+  isSkip?: boolean   // a bypass branch — gets a tighter gap in a choice
   draw: (x: number, y: number) => string
 }
 
@@ -84,9 +85,9 @@ function commentLayout(text: string): VLayout {
 }
 
 function skipLayout(): VLayout {
-  const w = 24, h = 12
+  const w = 16, h = 12
   return {
-    width: w, height: h, entryX: w / 2, exitX: w / 2,
+    width: w, height: h, entryX: w / 2, exitX: w / 2, isSkip: true,
     draw(x, y) { return vline(x + w / 2, y, y + h) },
   }
 }
@@ -106,7 +107,7 @@ function seqLayout(children: VLayout[]): VLayout {
       children.forEach((c, i) => {
         if (i > 0) { out += vline(x + railX, cy - VGAP, cy) }
         out += c.draw(x + offs[i], cy)
-        cy += c.height
+        cy += c.height + VGAP
       })
       return out
     },
@@ -116,32 +117,42 @@ function seqLayout(children: VLayout[]): VLayout {
 function choiceLayout(branches: VLayout[]): VLayout {
   if (1 === branches.length) return branches[0]
   const n = branches.length
-  const width = branches.reduce((a, c) => a + c.width, 0) + HGAP * (n - 1)
   const maxBH = Math.max(...branches.map((c) => c.height))
-  const height = VGAP + maxBH + VGAP
-  const entryX = width / 2
-  // branch x offsets within the box
+  // entry stub + fan-in + branches + fan-out + exit stub
+  const height = 4 * VGAP + maxBH
+  // branch x offsets within the box, and the entry on the fan midpoint.
+  // A bypass (skip) branch hugs its neighbour with a tighter gap.
   const bxs: number[] = []
   let bx = 0
-  branches.forEach((c) => { bxs.push(bx); bx += c.width + HGAP })
+  branches.forEach((c, i) => {
+    bxs.push(bx)
+    const next = branches[i + 1]
+    const gap = next && (c.isSkip || next.isSkip) ? AR : HGAP
+    bx += c.width + gap
+  })
+  const width = bxs[n - 1] + branches[n - 1].width
+  const relCenters = branches.map((c, i) => bxs[i] + c.entryX)
+  const entryX = (relCenters[0] + relCenters[n - 1]) / 2
   return {
     width, height, entryX, exitX: entryX,
     draw(x, y) {
       const splitY = y + VGAP
-      const mergeY = y + VGAP + maxBH
-      const centers = branches.map((c, i) => x + bxs[i] + c.entryX)
+      const branchY = splitY + VGAP
+      const mergeY = branchY + maxBH + VGAP
+      const centers = relCenters.map((c) => x + c)
       const lo = Math.min(x + entryX, ...centers)
       const hi = Math.max(x + entryX, ...centers)
       let out = ''
       out += vline(x + entryX, y, splitY)            // entry stub
-      out += vline(x + entryX, mergeY, y + height)   // exit stub
       out += hline(lo, hi, splitY)                   // split rail
       out += hline(lo, hi, mergeY)                   // merge rail
+      out += vline(x + entryX, mergeY, y + height)   // exit stub
       branches.forEach((c, i) => {
         const cx = x + bxs[i]
         const bex = cx + c.entryX
-        out += c.draw(cx, splitY)
-        out += vline(bex, splitY + c.height, mergeY) // drop to merge rail
+        out += vline(bex, splitY, branchY)            // fan-in drop
+        out += c.draw(cx, branchY)
+        out += vline(bex, branchY + c.height, mergeY) // fan-out drop
       })
       return out
     },

@@ -89,6 +89,18 @@ describe('railroad (node-level)', () => {
         Terminal(']')))
       assert.match(renderNodeSvg(node), /^<svg /)
     })
+    it('stacks sequence boxes without vertical overlap', () => {
+      // Regression: seq children must be spaced by the vertical gap, not
+      // drawn adjacent/overlapping.
+      const svg = renderNodeSvg(Sequence(Terminal('a'), Terminal('b'), Terminal('c')))
+      const bands = [...svg.matchAll(/<rect[^>]*\sy="([\d.]+)"[^>]*\sheight="([\d.]+)"/g)]
+        .map((m) => ({ y: +m[1], bottom: +m[1] + +m[2] }))
+        .sort((p, q) => p.y - q.y)
+      assert.equal(bands.length, 3)
+      for (let i = 1; i < bands.length; i++) {
+        assert.ok(bands[i].y >= bands[i - 1].bottom, 'sequence boxes overlap vertically')
+      }
+    })
   })
 
 
