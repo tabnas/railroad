@@ -1,0 +1,51 @@
+{
+  "name": "@tabnas/railroad",
+  "version": "0.1.0",
+  "main": "dist/railroad.js",
+  "type": "commonjs",
+  "types": "dist/railroad.d.ts",
+  "description": "Railroad (syntax) diagram renderer for the tabnas parser.",
+  "homepage": "https://github.com/rjrodger/tabnas-railroad",
+  "keywords": [
+    "tabnas",
+    "railroad",
+    "syntax",
+    "diagram",
+    "grammar",
+    "parser",
+    "plugin"
+  ],
+  "author": "Richard Rodger (http://richardrodger.com)",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/rjrodger/tabnas-railroad.git"
+  },
+  "scripts": {
+    "test": "node --enable-source-maps --test test/**/*.test.js",
+    "watch": "tsc --build src -w",
+    "build": "tsc --build src",
+    "clean": "rm -rf node_modules dist dist-test yarn.lock package-lock.json",
+    "reset": "npm run clean && npm i && npm run build && npm test"
+  },
+  "license": "MIT",
+  "files": [
+    "dist",
+    "bin",
+    "LICENSE"
+  ],
+  "bin": {
+    "tabnas-railroad": "bin/tabnas-railroad"
+  },
+  "exports": {
+    ".": "./dist/railroad.js"
+  },
+  "peerDependencies": {
+    "@tabnas/parser": "file:../../parser/ts"
+  },
+  "devDependencies": {
+    "@types/node": "25.6.0",
+    "@tabnas/parser": "file:../../parser/ts",
+    "@tabnas/json": "file:../../json/ts",
+    "typescript": "6.0.3"
+  }
+}
