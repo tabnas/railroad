@@ -254,6 +254,13 @@ export function modelToAscii(model: GrammarModel, opts: AsciiOptions = {}): stri
     const diagram = cv.render(plain)
     blocks.push(name + ':\n' + diagram)
   }
+  if (model.legend && model.legend.length) {
+    const w = Math.max(...model.legend.map((e) => e.token.length))
+    blocks.push(
+      'Tokens:\n' +
+      model.legend.map((e) => '  ' + e.token.padEnd(w) + ' = ' + e.meaning).join('\n'),
+    )
+  }
   return blocks.join('\n\n')
 }
 

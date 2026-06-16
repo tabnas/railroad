@@ -30,6 +30,8 @@ export type RailroadNode =
 export type GrammarModel = {
   start: string
   rules: { [name: string]: RailroadNode }
+  // Key for the named tokens (non-literal labels) that appear in the diagram.
+  legend?: { token: string; meaning: string }[]
   meta?: { engine: string; [k: string]: any }
 }
 

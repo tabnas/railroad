@@ -126,6 +126,21 @@ describe('whole-grammar rendering (json)', () => {
     assert.equal(modelToAscii(clone), modelToAscii(model))
   })
 
+  it('emits a token key/legend, rendered in SVG and ASCII', () => {
+    const model = build().railroad.toJson()
+    assert.ok(Array.isArray(model.legend) && model.legend.length > 0,
+      'model should carry a token legend')
+    const meaning = Object.fromEntries(model.legend.map((e) => [e.token, e.meaning]))
+    // json renders { / : / } as literals, but the KEY/VAL token sets show as
+    // names and therefore need a key entry.
+    assert.ok('KEY' in meaning, 'legend should explain KEY')
+    assert.ok('VAL' in meaning, 'legend should explain VAL')
+    assert.match(meaning.VAL, /value/)
+    // the key is rendered into both outputs.
+    assert.ok(modelToAscii(model).includes('Tokens:'), 'ASCII should include a Tokens key')
+    assert.ok(modelToSvg(model).includes('>Tokens<'), 'SVG should include a Tokens key')
+  })
+
 })
 
 
