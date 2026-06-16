@@ -61,15 +61,48 @@ type Ctx = {
 // Canonical meanings for the standard tabnas/jsonic token names, used when a
 // grammar references a token whose literal/regex isn't recoverable from its
 // config (e.g. a plugin that disables the JSON punctuation but still inherits
-// the map/list rules). Engine-derived meanings take precedence.
+// the map/list rules). A grammar-supplied `tokenDesc` entry (see descOf) takes
+// precedence, then CANON, then engine-derived meanings (regex/literal/set).
 const CANON: Record<string, string> = {
-  OB: '{', CB: '}', OS: '[', CS: ']', CL: ':', CA: ',', CO: ',',
-  SP: 'space', LN: 'newline', CM: 'comment',
-  NR: 'number', ST: 'string', TX: 'bare text',
-  VL: 'value literal (true, false, null, ...)',
-  ZZ: 'end of input', AA: 'any token', BD: 'bad input', UK: 'unknown token',
-  KEY: 'map key (text, number, string, or value)',
-  VAL: 'a value (text, number, string, or value)',
+  OB: 'open brace { (start of a map)',
+  CB: 'close brace } (end of a map)',
+  OS: 'open square bracket [ (start of a list)',
+  CS: 'close square bracket ] (end of a list)',
+  CL: 'colon : (separates a key from its value)',
+  CA: 'comma , (separates map pairs or list items)',
+  CO: 'comma , (separates map pairs or list items)',
+  SP: 'whitespace (spaces/tabs, usually ignored)',
+  LN: 'newline (line break, usually ignored)',
+  CM: 'comment (usually ignored)',
+  NR: 'number literal (e.g. 42, -1.5, 1e3)',
+  ST: 'quoted string (e.g. "text")',
+  TX: 'bare unquoted text (an unquoted word)',
+  VL: 'value keyword (true, false, null, ...)',
+  ZZ: 'end of input (no more tokens)',
+  AA: 'any token (matches anything)',
+  BD: 'bad input (a character the lexer rejected)',
+  UK: 'unknown token (unrecognised input)',
+  KEY: 'map key: bare text, number, string, or keyword',
+  VAL: 'value: bare text, number, string, or keyword',
+}
+
+// A grammar can attach human descriptions for its own tokens via the
+// `config.modify` hook (cfg.tokenDesc = { '#XOP': '...', ... }); railroad reads
+// them straight off the live config. Keyed by '#'-prefixed or bare name.
+function descOf(name: string, ctx: Ctx): string | undefined {
+  const td = ctx.cfg && ctx.cfg.tokenDesc
+  if (!td) return undefined
+  const d = td['#' + name] !== undefined ? td['#' + name] : td[name]
+  return 'string' === typeof d && '' !== d ? d : undefined
+}
+
+// CANON meaning truncated at its parenthetical, for compact inline use inside
+// a token-set listing (so "one of: ..." stays narrow).
+function canonShort(name: string): string {
+  const c = CANON[name]
+  if (!c) return name
+  const paren = c.indexOf(' (')
+  return paren > 0 ? c.slice(0, paren) : c
 }
 
 
@@ -291,32 +324,58 @@ function namedLabel(tin: number, ctx: Ctx): string {
   return label
 }
 
-// Human meaning for a named token: canonical standard name, else a regex
-// match, else a reverse-resolved fixed literal, else a bare label.
+// Human meaning for a named token: grammar-supplied description, else the
+// canonical standard name, else a regex match, else a reverse-resolved fixed
+// literal, else the token set it belongs to, else a bare label.
 function tokenMeaning(tin: number, ctx: Ctx): string {
   const name = stripHash(ctx.tinName.get(tin) || '')
+  const desc = descOf(name, ctx)
+  if (desc) return desc
   if (CANON[name]) return CANON[name]
   const m = ctx.cfg.match && ctx.cfg.match.token && ctx.cfg.match.token[tin]
-  if (m instanceof RegExp) return 'matches /' + prettySource(m) + '/'
+  if (m instanceof RegExp) return 'text matching /' + prettySource(m) + '/'
   const ft = ctx.cfg.fixed && ctx.cfg.fixed.token
   if (ft) {
     for (const [src, t] of Object.entries(ft)) {
-      if (t === tin && 'string' === typeof src) return JSON.stringify(src)
+      if (t === tin && 'string' === typeof src) return 'literal ' + JSON.stringify(src)
     }
   }
+  const owner = soleSetOf(tin, ctx)
+  if (owner) return 'part of ' + owner
   return name ? name + ' token' : 'token'
 }
 
-// Human meaning for a named token set.
+// Human meaning for a named token set: grammar-supplied description, else
+// canonical, else a deduped list of its members' short meanings.
 function setMeaning(setName: string, ctx: Ctx): string {
+  const desc = descOf(setName, ctx)
+  if (desc) return desc
   if (CANON[setName]) return CANON[setName]
+  const seen = new Set<string>()
   const members: string[] = ((ctx.cfg.tokenSet && ctx.cfg.tokenSet[setName]) || [])
     .map((t: number) => {
       const n = stripHash(ctx.tinName.get(t) || '')
-      return CANON[n] || n
+      return descOf(n, ctx) || canonShort(n) || n
     })
-    .filter(Boolean)
+    .filter((s: string) => s && !seen.has(s) && seen.add(s))
   return members.length ? 'one of: ' + members.join(', ') : 'token set'
+}
+
+// The single token set a tin belongs to (ignoring IGNORE), or null if it is in
+// none or several — used as a last-resort meaning for an otherwise bare token.
+function soleSetOf(tin: number, ctx: Ctx): string | null {
+  const sets = ctx.cfg.tokenSet
+  if (!sets) return null
+  let found: string | null = null
+  for (const name of Object.keys(sets)) {
+    if ('IGNORE' === name) continue
+    const members = sets[name]
+    if (Array.isArray(members) && members.includes(tin)) {
+      if (found) return null   // in more than one set -> ambiguous
+      found = name
+    }
+  }
+  return found
 }
 
 function tokenLabel(tin: number, ctx: Ctx): string {
@@ -507,5 +566,5 @@ function stripHash(s: string): string {
 }
 
 function prettySource(re: RegExp): string {
-  return re.source.replace(/^\^/, '')
+  return re.source.replace(/^\^/, '').replace(/\$$/, '')
 }
