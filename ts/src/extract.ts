@@ -143,10 +143,31 @@ export function extractGrammar(tn: any, opts: ExtractOptions = {}): GrammarModel
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([token, meaning]) => ({ token, meaning }))
 
+  const ignored = buildIgnored(ctx)
+
   return {
     start, rules, meta: { engine: 'tabnas' },
     ...(legend.length ? { legend } : {}),
+    ...(ignored.length ? { ignored } : {}),
   }
+}
+
+// The IGNORE token set (whitespace, newlines, comments, ...) — tokens the lexer
+// silently skips between meaningful tokens. They never appear in a rule, so the
+// diagram can't show them; report them on their own with the same descriptions.
+function buildIgnored(ctx: Ctx): { token: string; meaning: string }[] {
+  const ig = ctx.cfg && ctx.cfg.tokenSet && ctx.cfg.tokenSet.IGNORE
+  if (!Array.isArray(ig)) return []
+  const out: { token: string; meaning: string }[] = []
+  const seen = new Set<string>()
+  for (const tin of ig) {
+    if ('number' !== typeof tin || isControl(tin, ctx)) continue
+    const name = stripHash(ctx.tinName.get(tin) || '')
+    if (!name || seen.has(name)) continue
+    seen.add(name)
+    out.push({ token: name, meaning: tokenMeaning(tin, ctx) })
+  }
+  return out.sort((a, b) => a.token.localeCompare(b.token))
 }
 
 // Collect every distinct terminal label used in a node tree.

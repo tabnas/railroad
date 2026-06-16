@@ -32,6 +32,9 @@ export type GrammarModel = {
   rules: { [name: string]: RailroadNode }
   // Key for the named tokens (non-literal labels) that appear in the diagram.
   legend?: { token: string; meaning: string }[]
+  // Tokens the lexer silently skips (the IGNORE set): whitespace, comments,
+  // etc. They never appear in a rule, so they are reported separately.
+  ignored?: { token: string; meaning: string }[]
   meta?: { engine: string; [k: string]: any }
 }
 

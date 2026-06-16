@@ -141,6 +141,22 @@ describe('whole-grammar rendering (json)', () => {
     assert.ok(modelToSvg(model).includes('>Tokens<'), 'SVG should include a Tokens key')
   })
 
+  it('reports the IGNORE set (ignored tokens), rendered in SVG and ASCII', () => {
+    const model = build().railroad.toJson()
+    assert.ok(Array.isArray(model.ignored) && model.ignored.length > 0,
+      'model should carry the ignored-token set')
+    const tokens = model.ignored.map((e) => e.token)
+    // json ignores whitespace, newlines and comments — none appear in a rule.
+    assert.ok(tokens.includes('SP'), 'SP should be reported as ignored')
+    assert.ok(tokens.includes('LN'), 'LN should be reported as ignored')
+    assert.ok(model.ignored.every((e) => 'string' === typeof e.meaning && e.meaning),
+      'every ignored token should carry a meaning')
+    assert.ok(modelToAscii(model).includes('Ignored tokens:'),
+      'ASCII should include an Ignored tokens key')
+    assert.ok(modelToSvg(model).includes('>Ignored tokens<'),
+      'SVG should include an Ignored tokens key')
+  })
+
 })
 
 

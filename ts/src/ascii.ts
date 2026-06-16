@@ -254,13 +254,14 @@ export function modelToAscii(model: GrammarModel, opts: AsciiOptions = {}): stri
     const diagram = cv.render(plain)
     blocks.push(name + ':\n' + diagram)
   }
-  if (model.legend && model.legend.length) {
-    const w = Math.max(...model.legend.map((e) => e.token.length))
-    blocks.push(
-      'Tokens:\n' +
-      model.legend.map((e) => '  ' + e.token.padEnd(w) + ' = ' + e.meaning).join('\n'),
-    )
+  const keyBlock = (title: string, entries: { token: string; meaning: string }[]) => {
+    const w = Math.max(...entries.map((e) => e.token.length))
+    return title + ':\n' +
+      entries.map((e) => '  ' + e.token.padEnd(w) + ' = ' + e.meaning).join('\n')
   }
+  if (model.legend && model.legend.length) blocks.push(keyBlock('Tokens', model.legend))
+  // Tokens the lexer silently skips (IGNORE set) — never appear in a rule.
+  if (model.ignored && model.ignored.length) blocks.push(keyBlock('Ignored tokens', model.ignored))
   return blocks.join('\n\n')
 }
 
