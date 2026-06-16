@@ -55,6 +55,21 @@ type Ctx = {
   zz: number | undefined
   aa: number | undefined
   factor: boolean
+  legend: Map<string, string>   // named token label -> meaning
+}
+
+// Canonical meanings for the standard tabnas/jsonic token names, used when a
+// grammar references a token whose literal/regex isn't recoverable from its
+// config (e.g. a plugin that disables the JSON punctuation but still inherits
+// the map/list rules). Engine-derived meanings take precedence.
+const CANON: Record<string, string> = {
+  OB: '{', CB: '}', OS: '[', CS: ']', CL: ':', CA: ',', CO: ',',
+  SP: 'space', LN: 'newline', CM: 'comment',
+  NR: 'number', ST: 'string', TX: 'bare text',
+  VL: 'value literal (true, false, null, ...)',
+  ZZ: 'end of input', AA: 'any token', BD: 'bad input', UK: 'unknown token',
+  KEY: 'map key (text, number, string, or value)',
+  VAL: 'a value (text, number, string, or value)',
 }
 
 
@@ -71,6 +86,7 @@ export function extractGrammar(tn: any, opts: ExtractOptions = {}): GrammarModel
     zz: cfg.t ? cfg.t['#ZZ'] : undefined,
     aa: cfg.t ? cfg.t['#AA'] : undefined,
     factor: opts.factor !== false,
+    legend: new Map(),
   }
 
   // Entry rule; unwrap the synthetic `__start__` EOF wrapper.
@@ -86,7 +102,32 @@ export function extractGrammar(tn: any, opts: ExtractOptions = {}): GrammarModel
     rules[name] = ruleNode(name, ctx, new Set())
   }
 
-  return { start, rules, meta: { engine: 'tabnas' } }
+  // Legend: only the named tokens actually present in the final diagram.
+  const used = new Set<string>()
+  for (const r of Object.values(rules)) collectTerminals(r, used)
+  const legend = [...ctx.legend]
+    .filter(([label]) => used.has(label))
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([token, meaning]) => ({ token, meaning }))
+
+  return {
+    start, rules, meta: { engine: 'tabnas' },
+    ...(legend.length ? { legend } : {}),
+  }
+}
+
+// Collect every distinct terminal label used in a node tree.
+function collectTerminals(node: RailroadNode, out: Set<string>): void {
+  switch (node.kind) {
+    case 'terminal': out.add(node.text); break
+    case 'seq': case 'choice': case 'diagram':
+      node.items.forEach((n) => collectTerminals(n, out)); break
+    case 'optional': collectTerminals(node.item, out); break
+    case 'oneOrMore': case 'zeroOrMore':
+      collectTerminals(node.item, out)
+      if (node.rep) collectTerminals(node.rep, out)
+      break
+  }
 }
 
 
@@ -226,15 +267,56 @@ function positionNode(pos: Position, ctx: Ctx): RailroadNode | null {
   if ('string' === typeof pos.raw) {
     const bare = stripHash(pos.raw)
     if (/^#[A-Za-z]/.test(pos.raw) && ctx.cfg.tokenSet && ctx.cfg.tokenSet[bare]) {
+      ctx.legend.set(bare, setMeaning(bare, ctx))
       return Terminal(bare)
     }
   }
   const useful = pos.tins.filter((t) => !isControl(t, ctx))
   if (0 === useful.length) return null
-  if (1 === useful.length) return Terminal(tokenLabel(useful[0], ctx))
+  if (1 === useful.length) return Terminal(namedLabel(useful[0], ctx))
   const setName = matchTokenSet(useful, ctx)
-  if (setName) return Terminal(setName)
-  return Choice(...useful.map((t) => Terminal(tokenLabel(t, ctx))))
+  if (setName) {
+    ctx.legend.set(setName, setMeaning(setName, ctx))
+    return Terminal(setName)
+  }
+  return Choice(...useful.map((t) => Terminal(namedLabel(t, ctx))))
+}
+
+// tokenLabel, additionally recording a legend entry when the label is a
+// named token (not a self-explanatory punctuation literal).
+function namedLabel(tin: number, ctx: Ctx): string {
+  const label = tokenLabel(tin, ctx)
+  const fixed = ctx.cfg.fixed && ctx.cfg.fixed.ref && ctx.cfg.fixed.ref[tin]
+  if (label !== fixed) ctx.legend.set(label, tokenMeaning(tin, ctx))
+  return label
+}
+
+// Human meaning for a named token: canonical standard name, else a regex
+// match, else a reverse-resolved fixed literal, else a bare label.
+function tokenMeaning(tin: number, ctx: Ctx): string {
+  const name = stripHash(ctx.tinName.get(tin) || '')
+  if (CANON[name]) return CANON[name]
+  const m = ctx.cfg.match && ctx.cfg.match.token && ctx.cfg.match.token[tin]
+  if (m instanceof RegExp) return 'matches /' + prettySource(m) + '/'
+  const ft = ctx.cfg.fixed && ctx.cfg.fixed.token
+  if (ft) {
+    for (const [src, t] of Object.entries(ft)) {
+      if (t === tin && 'string' === typeof src) return JSON.stringify(src)
+    }
+  }
+  return name ? name + ' token' : 'token'
+}
+
+// Human meaning for a named token set.
+function setMeaning(setName: string, ctx: Ctx): string {
+  if (CANON[setName]) return CANON[setName]
+  const members: string[] = ((ctx.cfg.tokenSet && ctx.cfg.tokenSet[setName]) || [])
+    .map((t: number) => {
+      const n = stripHash(ctx.tinName.get(t) || '')
+      return CANON[n] || n
+    })
+    .filter(Boolean)
+  return members.length ? 'one of: ' + members.join(', ') : 'token set'
 }
 
 function tokenLabel(tin: number, ctx: Ctx): string {

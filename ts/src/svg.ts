@@ -242,6 +242,8 @@ const STYLE =
   '.rr-label{fill:#111;text-anchor:middle;dominant-baseline:middle}' +
   '.rr-comment{fill:#666;font-style:italic;text-anchor:middle;dominant-baseline:middle}' +
   '.rr-title{fill:#113;font-weight:bold;font-size:15px}' +
+  '.rr-legend{fill:#333;font-size:12px}' +
+  '.rr-legend-tok{fill:#113;font-weight:bold}' +
   'a:hover .rr-nonterm{fill:#ffe6b3;cursor:pointer}'
 
 function svgDoc(body: string, w: number, h: number): string {
@@ -321,7 +323,23 @@ export function modelToSvg(model: GrammarModel, _opts: SvgOptions = {}): string 
     pageH = Math.max(pageH, y - TRACK_GAP)
     x += colW + COLGAP
   }
-  return svgDoc(body, x - COLGAP + PAD, pageH + PAD)
+  let pageW = x - COLGAP + PAD
+
+  // Token key / legend below the rule tracks.
+  if (model.legend && model.legend.length) {
+    let ly = pageH + TRACK_GAP
+    body += `<text class="rr-title" x="${PAD}" y="${ly + 15}">Tokens</text>`
+    ly += TITLE_H
+    for (const e of model.legend) {
+      body +=
+        `<text class="rr-legend" x="${PAD}" y="${ly + 11}">` +
+        `<tspan class="rr-legend-tok">${esc(e.token)}</tspan>  —  ${esc(e.meaning)}</text>`
+      pageW = Math.max(pageW, PAD + (e.token.length + e.meaning.length + 5) * 7.5 + PAD)
+      ly += 18
+    }
+    pageH = ly
+  }
+  return svgDoc(body, pageW, pageH + PAD)
 }
 
 function orderRules(model: GrammarModel): string[] {
