@@ -325,12 +325,12 @@ export function modelToSvg(model: GrammarModel, _opts: SvgOptions = {}): string 
   }
   let pageW = x - COLGAP + PAD
 
-  // Token key / legend below the rule tracks.
-  if (model.legend && model.legend.length) {
+  // Token key + ignored-token key below the rule tracks.
+  const renderKey = (title: string, entries: { token: string; meaning: string }[]) => {
     let ly = pageH + TRACK_GAP
-    body += `<text class="rr-title" x="${PAD}" y="${ly + 15}">Tokens</text>`
+    body += `<text class="rr-title" x="${PAD}" y="${ly + 15}">${esc(title)}</text>`
     ly += TITLE_H
-    for (const e of model.legend) {
+    for (const e of entries) {
       body +=
         `<text class="rr-legend" x="${PAD}" y="${ly + 11}">` +
         `<tspan class="rr-legend-tok">${esc(e.token)}</tspan>  —  ${esc(e.meaning)}</text>`
@@ -339,6 +339,10 @@ export function modelToSvg(model: GrammarModel, _opts: SvgOptions = {}): string 
     }
     pageH = ly
   }
+  if (model.legend && model.legend.length) renderKey('Tokens', model.legend)
+  // Tokens the lexer silently skips (whitespace, comments, ...) — they never
+  // appear in a rule, so they are listed separately from the diagram tokens.
+  if (model.ignored && model.ignored.length) renderKey('Ignored tokens', model.ignored)
   return svgDoc(body, pageW, pageH + PAD)
 }
 
