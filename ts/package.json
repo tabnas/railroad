@@ -1,6 +1,6 @@
 {
   "name": "@tabnas/railroad",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "main": "dist/railroad.js",
   "type": "commonjs",
   "types": "dist/railroad.d.ts",
@@ -40,7 +40,7 @@
     ".": "./dist/railroad.js"
   },
   "peerDependencies": {
-    "@tabnas/parser": "file:../../parser/ts"
+    "@tabnas/parser": "^0.2.0"
   },
   "devDependencies": {
     "@tabnas/debug": "file:../../debug/ts",
