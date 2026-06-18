@@ -10,9 +10,35 @@ This repository contains:
 
 | Path | Description |
 |---|---|
-| [`ts/`](ts/) | TypeScript / JavaScript implementation (`@tabnas/railroad`), plus the `tabnas-railroad` CLI. |
+| [`ts/`](ts/) | TypeScript / JavaScript implementation (`@tabnas/railroad`), plus the `tabnas-railroad` CLI. **Canonical.** |
+| [`go/`](go/) | Go port (`package tabnasrailroad`), plus the `cmd/tabnas-railroad` CLI. Tracks `ts/`. |
 
-See [`ts/README.md`](ts/README.md) for usage.
+See [`ts/README.md`](ts/README.md) and [`go/README.md`](go/README.md) for usage.
+
+## Documentation
+
+Four-quadrant [Diátaxis](https://diataxis.fr/) docs, per language:
+
+| | TypeScript (canonical) | Go (port) |
+|---|---|---|
+| **Tutorial** (learn) | [ts/doc/tutorial.md](ts/doc/tutorial.md) | [go/doc/tutorial.md](go/doc/tutorial.md) |
+| **How-to** (tasks) | [ts/doc/guide.md](ts/doc/guide.md) | [go/doc/guide.md](go/doc/guide.md) |
+| **Reference** (API/CLI) | [ts/doc/reference.md](ts/doc/reference.md) | [go/doc/reference.md](go/doc/reference.md) |
+| **Concepts** (why) | [ts/doc/concepts.md](ts/doc/concepts.md) | [go/doc/concepts.md](go/doc/concepts.md) |
+
+## A tiny taste
+
+```js
+const { Tabnas } = require('@tabnas/parser')
+const { json } = require('@tabnas/json')
+const { railroad } = require('@tabnas/railroad')
+
+const tn = new Tabnas({ plugins: [json, railroad] })
+const model = tn.railroad.toJson()
+
+model.start                       // => 'val'
+Object.keys(model.rules).length   // => 5
+```
 
 ## Sample output
 

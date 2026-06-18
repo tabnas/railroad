@@ -23,6 +23,18 @@ the extracted `GrammarModel` JSON matches the TS model for the same grammar
 (same `start` / rules / structure), and the SVG/ASCII renderers produce the
 same vertical-flow output.
 
+## Documentation
+
+Four-quadrant [Diátaxis](https://diataxis.fr/) docs:
+
+- [doc/tutorial.md](doc/tutorial.md) — zero to a rendered diagram, step by step.
+- [doc/guide.md](doc/guide.md) — focused how-to recipes.
+- [doc/reference.md](doc/reference.md) — the exact API surface and CLI flags.
+- [doc/concepts.md](doc/concepts.md) — how introspection and vertical-flow
+  layout work, and the [differences from the TS version](doc/concepts.md#differences-from-the-ts-version).
+
+The canonical TypeScript implementation lives in [`../ts`](../ts).
+
 ## Install
 
 ```bash
@@ -97,6 +109,45 @@ identical sets — e.g. `KEY` vs `VAL` — by position role: a slot followed by
 a colon is a map key). Rule-map key order is not part of the cross-language
 contract; the Go model orders user rules deterministically (the engine's
 `RSM` is an unordered map).
+
+## Sample output
+
+The json grammar rendered to a vertical-flow diagram
+(`go run ./cmd/tabnas-railroad --grammar json -o examples`):
+
+![railroad diagram of the json grammar](../examples/json-grammar.svg)
+
+The same grammar as an ASCII diagram (excerpt — the `val` choice and the
+`pair` loop; full output in
+[`../examples/json-grammar.txt`](../examples/json-grammar.txt)):
+
+```text
+val:
+              │
+   ┌──────────┼──────────┐
+┌──┴──┐   ┌───┴──┐   ╭───┴───╮
+│ map │   │ list │   │ "VAL" │
+└──┬──┘   └───┬──┘   ╰───┬───╯
+   └──────────┼──────────┘
+              │
+
+pair:
+    │
+    ├────┐
+╭───┴───╮│
+│ "KEY" ││
+╰───┬───╯│
+    │    │
+ ╭──┴──╮ │
+ │ ":" │ │,
+ ╰──┬──╯ │
+    │    │
+ ┌──┴──┐ │
+ │ val │ │
+ └──┬──┘ │
+    ├────┘
+    │
+```
 
 ## CLI
 

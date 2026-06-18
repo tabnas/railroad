@@ -41,6 +41,17 @@ tn.railroad.toSvg().startsWith('<svg')   // => true
 - `tn.railroad.toSvg(opts?)` — whole-grammar SVG.
 - `tn.railroad.toAscii(opts?)` — whole-grammar ASCII (`{ ascii: true }` for plain `| - +`).
 
+## Documentation
+
+Four-quadrant [Diátaxis](https://diataxis.fr/) docs:
+
+- [doc/tutorial.md](doc/tutorial.md) — zero to a rendered diagram, step by step.
+- [doc/guide.md](doc/guide.md) — focused how-to recipes.
+- [doc/reference.md](doc/reference.md) — the exact API surface and CLI flags.
+- [doc/concepts.md](doc/concepts.md) — how introspection and vertical-flow layout work.
+
+The Go port lives in [`../go`](../go) (see [`../go/README.md`](../go/README.md)).
+
 ## Sample output
 
 `@tabnas/json` rendered to a vertical-flow diagram
