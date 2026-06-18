@@ -11,7 +11,7 @@
 // Unicode glyph set for plain | - +.
 //
 // This file mirrors ts/src/ascii.ts.
-package railroad
+package tabnasrailroad
 
 import "strings"
 

@@ -2,7 +2,7 @@
 
 // grammar_test.go is the Go port of ts/test/grammar.test.js: grammar-driven
 // extraction + rendering, validated against the Go @tabnas/json plugin.
-package railroad
+package tabnasrailroad
 
 import (
 	"encoding/json"

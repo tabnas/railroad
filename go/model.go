@@ -12,7 +12,7 @@
 // instance.
 //
 // This file mirrors ts/src/model.ts.
-package railroad
+package tabnasrailroad
 
 import (
 	"encoding/json"
