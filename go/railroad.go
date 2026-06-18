@@ -18,7 +18,7 @@
 // The extraction + rendering logic lives in extract.go / svg.go / ascii.go;
 // this file is the plugin wiring plus the package-level entry points for
 // instance-free use.
-package railroad
+package tabnasrailroad
 
 import (
 	tabnas "github.com/tabnas/parser/go"

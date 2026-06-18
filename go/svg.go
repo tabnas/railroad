@@ -15,7 +15,7 @@
 // nonterminal boxes into <a href="#rule"> links.
 //
 // This file mirrors ts/src/svg.ts.
-package railroad
+package tabnasrailroad
 
 import (
 	"math"

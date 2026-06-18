@@ -26,7 +26,7 @@
 // not retained on the live RuleSpec), so the extractor recovers a readable
 // set name by matching the resolved Tin set against the instance's named
 // token sets, disambiguating identical sets (KEY vs VAL) by position role.
-package railroad
+package tabnasrailroad
 
 import (
 	"regexp"

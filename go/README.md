@@ -39,18 +39,18 @@ import (
 
 	jsonplugin "github.com/tabnas/json/go"
 	tabnas "github.com/tabnas/parser/go"
-	railroad "github.com/tabnas/railroad/go"
+	tabnasrailroad "github.com/tabnas/railroad/go"
 )
 
 func main() {
 	tn := tabnas.Make()
 	jsonplugin.Json(tn, nil) // install a grammar to diagram
-	railroad.Plugin(tn, nil) // decorate the instance
+	tabnasrailroad.Plugin(tn, nil) // decorate the instance
 
-	api := railroad.Of(tn)
+	api := tabnasrailroad.Of(tn)
 	model := api.ToJson()    // *GrammarModel
 	svg, _ := api.ToSvg()    // whole-grammar SVG
-	ascii, _ := api.ToAscii(railroad.AsciiOptions{}) // whole-grammar ASCII
+	ascii, _ := api.ToAscii(tabnasrailroad.AsciiOptions{}) // whole-grammar ASCII
 
 	fmt.Println(model.Start) // val
 	_ = svg
@@ -61,18 +61,18 @@ func main() {
 Instance-free use of the extractor and renderers:
 
 ```go
-model := railroad.ExtractGrammar(tn)
-svg, _ := railroad.ModelToSvg(model)
-ascii, _ := railroad.ModelToAscii(model, railroad.AsciiOptions{Plain: true})
-text, _ := railroad.ToText(model.Rules["val"])
+model := tabnasrailroad.ExtractGrammar(tn)
+svg, _ := tabnasrailroad.ModelToSvg(model)
+ascii, _ := tabnasrailroad.ModelToAscii(model, tabnasrailroad.AsciiOptions{Plain: true})
+text, _ := tabnasrailroad.ToText(model.Rules["val"])
 ```
 
 Hand-build a diagram node tree and render a single node:
 
 ```go
-node := railroad.Diagram(railroad.Sequence(
-	railroad.Terminal("GET"), railroad.NonTerminal("path")))
-svg, _ := railroad.RenderNodeSvg(node)
+node := tabnasrailroad.Diagram(tabnasrailroad.Sequence(
+	tabnasrailroad.Terminal("GET"), tabnasrailroad.NonTerminal("path")))
+svg, _ := tabnasrailroad.RenderNodeSvg(node)
 ```
 
 ## Exports

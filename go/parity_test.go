@@ -6,7 +6,7 @@
 // legend, same ignored set. Rule-map key order and JSON key order are not
 // part of the contract (the SVG/ASCII tests assert well-formedness, not
 // pixel-identity), so the comparison is structural.
-package railroad
+package tabnasrailroad
 
 import (
 	"encoding/json"

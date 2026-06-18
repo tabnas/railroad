@@ -3,7 +3,7 @@
 // railroad_test.go is the Go port of ts/test/railroad.test.js: node-level
 // model construction, the text emitter, the single-node SVG/ASCII
 // renderers, the plugin decoration, and error cases.
-package railroad
+package tabnasrailroad
 
 import (
 	"errors"
