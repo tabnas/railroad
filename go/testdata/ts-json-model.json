@@ -1,0 +1,124 @@
+{
+  "start": "val",
+  "rules": {
+    "val": {
+      "kind": "choice",
+      "items": [
+        {
+          "kind": "nonterminal",
+          "text": "map"
+        },
+        {
+          "kind": "nonterminal",
+          "text": "list"
+        },
+        {
+          "kind": "terminal",
+          "text": "VAL"
+        }
+      ]
+    },
+    "map": {
+      "kind": "seq",
+      "items": [
+        {
+          "kind": "terminal",
+          "text": "{"
+        },
+        {
+          "kind": "optional",
+          "item": {
+            "kind": "nonterminal",
+            "text": "pair"
+          }
+        },
+        {
+          "kind": "terminal",
+          "text": "}"
+        }
+      ]
+    },
+    "list": {
+      "kind": "seq",
+      "items": [
+        {
+          "kind": "terminal",
+          "text": "["
+        },
+        {
+          "kind": "optional",
+          "item": {
+            "kind": "nonterminal",
+            "text": "elem"
+          }
+        },
+        {
+          "kind": "terminal",
+          "text": "]"
+        }
+      ]
+    },
+    "pair": {
+      "kind": "oneOrMore",
+      "item": {
+        "kind": "seq",
+        "items": [
+          {
+            "kind": "terminal",
+            "text": "KEY"
+          },
+          {
+            "kind": "terminal",
+            "text": ":"
+          },
+          {
+            "kind": "nonterminal",
+            "text": "val"
+          }
+        ]
+      },
+      "rep": {
+        "kind": "terminal",
+        "text": ","
+      }
+    },
+    "elem": {
+      "kind": "oneOrMore",
+      "item": {
+        "kind": "nonterminal",
+        "text": "val"
+      },
+      "rep": {
+        "kind": "terminal",
+        "text": ","
+      }
+    }
+  },
+  "meta": {
+    "engine": "tabnas"
+  },
+  "legend": [
+    {
+      "token": "KEY",
+      "meaning": "map key: bare text, number, string, or keyword"
+    },
+    {
+      "token": "VAL",
+      "meaning": "value: bare text, number, string, or keyword"
+    }
+  ],
+  "ignored": [
+    {
+      "token": "CM",
+      "meaning": "comment"
+    },
+    {
+      "token": "LN",
+      "meaning": "newline (line break)"
+    },
+    {
+      "token": "SP",
+      "meaning": "whitespace (spaces or tabs)"
+    }
+  ]
+}
