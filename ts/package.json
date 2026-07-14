@@ -1,6 +1,6 @@
 {
   "name": "@tabnas/railroad",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "dist/railroad.js",
   "type": "commonjs",
   "types": "dist/railroad.d.ts",
