@@ -43,9 +43,9 @@
     "@tabnas/parser": ">=0"
   },
   "devDependencies": {
-    "@tabnas/debug": "file:../../debug/ts",
-    "@tabnas/json": "file:../../json/ts",
-    "@tabnas/parser": "file:../../parser/ts",
+    "@tabnas/debug": "*",
+    "@tabnas/json": "*",
+    "@tabnas/parser": "*",
     "@types/node": "25.6.0",
     "typescript": "6.0.3"
   },
