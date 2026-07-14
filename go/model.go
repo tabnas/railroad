@@ -416,9 +416,25 @@ func Diagram(items ...*RailroadNode) *RailroadNode {
 	return &RailroadNode{Kind: KindDiagram, Items: items}
 }
 
+// Norm coerces an item to a valid *RailroadNode. It mirrors the TS `norm`
+// export and its Item union (RailroadNode | string): a bare string is taken
+// to be a terminal — the common case when hand-building diagrams — and a
+// *RailroadNode is validated as-is. Any other value (including nil or a
+// node with an empty Kind) yields a RailroadError.
+func Norm(item any) (*RailroadNode, error) {
+	switch v := item.(type) {
+	case string:
+		return Terminal(v), nil
+	case *RailroadNode:
+		return norm(v)
+	default:
+		return nil, &RailroadError{Message: "railroad: invalid diagram node", Node: item}
+	}
+}
+
 // norm validates a node, returning a RailroadError for a nil/invalid node.
-// (The TS norm also coerces a bare string to a Terminal; in Go terminals
-// are always explicit, so this only validates.)
+// It is the node-only internal form of Norm (the TS norm also coerces a
+// bare string to a Terminal; internally in Go nodes are always explicit).
 func norm(item *RailroadNode) (*RailroadNode, error) {
 	if item == nil || item.Kind == "" {
 		return nil, &RailroadError{Message: "railroad: invalid diagram node", Node: item}
@@ -511,9 +527,10 @@ func joinText(items []*RailroadNode, sep string, dropEmpty bool) (string, error)
 
 // ---- structural helpers --------------------------------------------
 
-// nodeEqual reports deep structural equality, used by choice prefix/suffix
-// factoring to detect shared leading/trailing elements. Mirrors nodeEqual.
-func nodeEqual(a, b *RailroadNode) bool {
+// NodeEqual reports deep structural equality of two nodes, used by choice
+// prefix/suffix factoring to detect shared leading/trailing elements. It
+// mirrors the TS `nodeEqual` export; two nil nodes compare equal.
+func NodeEqual(a, b *RailroadNode) bool {
 	if a == nil || b == nil {
 		return a == b
 	}
@@ -530,17 +547,17 @@ func nodeEqual(a, b *RailroadNode) bool {
 			return false
 		}
 		for i := range a.Items {
-			if !nodeEqual(a.Items[i], b.Items[i]) {
+			if !NodeEqual(a.Items[i], b.Items[i]) {
 				return false
 			}
 		}
 		return true
 	case KindOptional:
-		return nodeEqual(a.Item, b.Item)
+		return NodeEqual(a.Item, b.Item)
 	case KindOneOrMore, KindZeroOrMore:
 		repEq := (a.Rep == nil && b.Rep == nil) ||
-			(a.Rep != nil && b.Rep != nil && nodeEqual(a.Rep, b.Rep))
-		return repEq && nodeEqual(a.Item, b.Item)
+			(a.Rep != nil && b.Rep != nil && NodeEqual(a.Rep, b.Rep))
+		return repEq && NodeEqual(a.Item, b.Item)
 	}
 	return false
 }

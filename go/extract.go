@@ -666,7 +666,7 @@ func factorChoice(rawBranches []*RailroadNode) *RailroadNode {
 	for _, b := range rawBranches {
 		dup := false
 		for _, u := range branches {
-			if nodeEqual(u, b) {
+			if NodeEqual(u, b) {
 				dup = true
 				break
 			}
@@ -707,7 +707,7 @@ prefixLoop:
 		}
 		first := seqs[0][i]
 		for _, s := range seqs {
-			if i >= len(s) || !nodeEqual(s[i], first) {
+			if i >= len(s) || !NodeEqual(s[i], first) {
 				break prefixLoop
 			}
 		}
@@ -727,7 +727,7 @@ suffixLoop:
 		first := seqs[0][len(seqs[0])-k]
 		for _, s := range seqs {
 			el := s[len(s)-k]
-			if !nodeEqual(el, first) {
+			if !NodeEqual(el, first) {
 				break suffixLoop
 			}
 		}
@@ -745,7 +745,7 @@ suffixLoop:
 		}
 		dup := false
 		for _, u := range remNodes {
-			if nodeEqual(u, rem) {
+			if NodeEqual(u, rem) {
 				dup = true
 				break
 			}

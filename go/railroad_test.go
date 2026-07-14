@@ -202,6 +202,72 @@ func TestInvalidNodeErrors(t *testing.T) {
 	}
 }
 
+// ---- exported Norm / NodeEqual --------------------------------------
+
+func TestNorm(t *testing.T) {
+	// A bare string coerces to a Terminal, mirroring the TS norm export.
+	n, err := Norm("(")
+	if err != nil {
+		t.Fatalf("Norm(string) errored: %v", err)
+	}
+	if !NodeEqual(n, Terminal("(")) {
+		t.Errorf("Norm(\"(\") = %+v, want Terminal(\"(\")", n)
+	}
+
+	// A valid node passes through unchanged.
+	nt := NonTerminal("expr")
+	n, err = Norm(nt)
+	if err != nil {
+		t.Fatalf("Norm(node) errored: %v", err)
+	}
+	if n != nt {
+		t.Errorf("Norm(node) should return the same node")
+	}
+
+	// nil, a typed-nil node, an empty-Kind node, and a non-Item value all error.
+	for _, bad := range []any{nil, (*RailroadNode)(nil), &RailroadNode{}, 42} {
+		if _, err := Norm(bad); err == nil {
+			t.Errorf("Norm(%#v) should error", bad)
+		} else {
+			var re *RailroadError
+			if !errors.As(err, &re) {
+				t.Errorf("Norm(%#v): expected *RailroadError, got %v", bad, err)
+			}
+		}
+	}
+}
+
+func TestNodeEqual(t *testing.T) {
+	a := MustChoice(Terminal("a"), Optional(NonTerminal("b")),
+		OneOrMore(Terminal("c"), Terminal(",")))
+	b := MustChoice(Terminal("a"), Optional(NonTerminal("b")),
+		OneOrMore(Terminal("c"), Terminal(",")))
+	if !NodeEqual(a, b) {
+		t.Errorf("structurally identical trees should be NodeEqual")
+	}
+	if !NodeEqual(SkipNode(), SkipNode()) {
+		t.Errorf("NodeEqual(Skip, Skip) should be true")
+	}
+	if NodeEqual(Terminal("x"), NonTerminal("x")) {
+		t.Errorf("differing kinds should not be NodeEqual")
+	}
+	if NodeEqual(Terminal("x"), Terminal("y")) {
+		t.Errorf("differing text should not be NodeEqual")
+	}
+	if NodeEqual(a, MustChoice(Terminal("a"))) {
+		t.Errorf("differing item counts should not be NodeEqual")
+	}
+	if NodeEqual(OneOrMore(Terminal("c"), Terminal(",")), OneOrMore(Terminal("c"), nil)) {
+		t.Errorf("rep presence mismatch should not be NodeEqual")
+	}
+	if !NodeEqual(nil, nil) {
+		t.Errorf("NodeEqual(nil, nil) should be true")
+	}
+	if NodeEqual(a, nil) || NodeEqual(nil, a) {
+		t.Errorf("nil vs node should not be NodeEqual")
+	}
+}
+
 // ---- helpers -------------------------------------------------------
 
 func svgAttr(t *testing.T, svg, name string) int {

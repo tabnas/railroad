@@ -75,16 +75,16 @@ func TestMapShape(t *testing.T) {
 	if m.Kind != KindSeq {
 		t.Fatalf("map.kind = %q, want seq", m.Kind)
 	}
-	if !nodeEqual(m.Items[0], Terminal("{")) {
+	if !NodeEqual(m.Items[0], Terminal("{")) {
 		t.Errorf("map.items[0] = %+v, want terminal {", m.Items[0])
 	}
 	if m.Items[1].Kind != KindOptional {
 		t.Errorf("map.items[1].kind = %q, want optional", m.Items[1].Kind)
 	}
-	if !nodeEqual(m.Items[1].Item, NonTerminal("pair")) {
+	if !NodeEqual(m.Items[1].Item, NonTerminal("pair")) {
 		t.Errorf("map.items[1].item = %+v, want nonterminal pair", m.Items[1].Item)
 	}
-	if !nodeEqual(m.Items[2], Terminal("}")) {
+	if !NodeEqual(m.Items[2], Terminal("}")) {
 		t.Errorf("map.items[2] = %+v, want terminal }", m.Items[2])
 	}
 }
@@ -94,16 +94,16 @@ func TestListShape(t *testing.T) {
 	if l.Kind != KindSeq {
 		t.Fatalf("list.kind = %q, want seq", l.Kind)
 	}
-	if !nodeEqual(l.Items[0], Terminal("[")) {
+	if !NodeEqual(l.Items[0], Terminal("[")) {
 		t.Errorf("list.items[0] = %+v, want terminal [", l.Items[0])
 	}
 	if l.Items[1].Kind != KindOptional {
 		t.Errorf("list.items[1].kind = %q, want optional", l.Items[1].Kind)
 	}
-	if !nodeEqual(l.Items[1].Item, NonTerminal("elem")) {
+	if !NodeEqual(l.Items[1].Item, NonTerminal("elem")) {
 		t.Errorf("list.items[1].item = %+v, want nonterminal elem", l.Items[1].Item)
 	}
-	if !nodeEqual(l.Items[2], Terminal("]")) {
+	if !NodeEqual(l.Items[2], Terminal("]")) {
 		t.Errorf("list.items[2] = %+v, want terminal ]", l.Items[2])
 	}
 }
@@ -113,19 +113,19 @@ func TestPairShape(t *testing.T) {
 	if p.Kind != KindOneOrMore {
 		t.Fatalf("pair.kind = %q, want oneOrMore", p.Kind)
 	}
-	if !nodeEqual(p.Rep, Terminal(",")) {
+	if !NodeEqual(p.Rep, Terminal(",")) {
 		t.Errorf("pair.rep = %+v, want terminal ,", p.Rep)
 	}
 	if p.Item.Kind != KindSeq {
 		t.Fatalf("pair.item.kind = %q, want seq", p.Item.Kind)
 	}
-	if !nodeEqual(p.Item.Items[0], Terminal("KEY")) {
+	if !NodeEqual(p.Item.Items[0], Terminal("KEY")) {
 		t.Errorf("pair.item.items[0] = %+v, want terminal KEY", p.Item.Items[0])
 	}
-	if !nodeEqual(p.Item.Items[1], Terminal(":")) {
+	if !NodeEqual(p.Item.Items[1], Terminal(":")) {
 		t.Errorf("pair.item.items[1] = %+v, want terminal :", p.Item.Items[1])
 	}
-	if !nodeEqual(p.Item.Items[2], NonTerminal("val")) {
+	if !NodeEqual(p.Item.Items[2], NonTerminal("val")) {
 		t.Errorf("pair.item.items[2] = %+v, want nonterminal val", p.Item.Items[2])
 	}
 }
@@ -135,10 +135,10 @@ func TestElemShape(t *testing.T) {
 	if e.Kind != KindOneOrMore {
 		t.Fatalf("elem.kind = %q, want oneOrMore", e.Kind)
 	}
-	if !nodeEqual(e.Item, NonTerminal("val")) {
+	if !NodeEqual(e.Item, NonTerminal("val")) {
 		t.Errorf("elem.item = %+v, want nonterminal val", e.Item)
 	}
-	if !nodeEqual(e.Rep, Terminal(",")) {
+	if !NodeEqual(e.Rep, Terminal(",")) {
 		t.Errorf("elem.rep = %+v, want terminal ,", e.Rep)
 	}
 }
