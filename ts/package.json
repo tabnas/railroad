@@ -1,6 +1,6 @@
 {
   "name": "@tabnas/railroad",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "main": "dist/railroad.js",
   "type": "commonjs",
   "types": "dist/railroad.d.ts",
@@ -18,7 +18,8 @@
   "author": "Richard Rodger (http://richardrodger.com)",
   "repository": {
     "type": "git",
-    "url": "git://github.com/rjrodger/tabnas-railroad.git"
+    "url": "git://github.com/tabnas/railroad.git",
+    "directory": "ts"
   },
   "scripts": {
     "test": "node --enable-source-maps --test test/**/*.test.js",

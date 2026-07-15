@@ -20,7 +20,7 @@ import (
 )
 
 // Version is the current version of the module.
-const Version = "0.2.0"
+const Version = "0.2.1"
 
 // NodeKind enumerates the railroad node variants (the tagged-union tag).
 type NodeKind = string
