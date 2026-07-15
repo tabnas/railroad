@@ -1,5 +1,12 @@
 # @tabnas/railroad
 
+<!-- tabnas-badges -->
+[![npm](https://tabnas.github.io/status/badges/railroad-npm.svg)](https://www.npmjs.com/package/@tabnas/railroad)
+[![CI](https://github.com/tabnas/railroad/actions/workflows/ci.yml/badge.svg)](https://github.com/tabnas/railroad/actions/workflows/ci.yml)
+[![go](https://tabnas.github.io/status/badges/railroad-go.svg)](https://pkg.go.dev/github.com/tabnas/railroad/go)
+[![tabnas standard](https://tabnas.github.io/status/badges/railroad-standard.svg)](https://tabnas.github.io/status/)
+<!-- /tabnas-badges -->
+
 Railroad (syntax) diagram renderer for the
 [tabnas](https://github.com/rjrodger/tabnas) parser — introspects a tabnas
 instance's installed grammar and emits a declarative JSON model, a
