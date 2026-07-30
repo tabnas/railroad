@@ -1,0 +1,9 @@
+node	ascii	opts
+{"kind":"diagram","items":[{"kind":"seq","items":[{"kind":"terminal","text":"a"},{"kind":"nonterminal","text":"b"}]}]}	"   │\n╭──┴──╮\n│ \"a\" │\n╰──┬──╯\n   │\n ┌─┴─┐\n │ b │\n └─┬─┘\n   │"
+{"kind":"choice","items":[{"kind":"terminal","text":"a"},{"kind":"terminal","text":"b"}]}	"        |\n   +----+----+\n+--+--+   +--+--+\n| \"a\" |   | \"b\" |\n+--+--+   +--+--+\n   +----+----+\n        |"	{"ascii":true}
+{"kind":"choice","items":[{"kind":"terminal","text":"a"},{"kind":"terminal","text":"b"}]}	"        │\n   ┌────┴────┐\n╭──┴──╮   ╭──┴──╮\n│ \"a\" │   │ \"b\" │\n╰──┬──╯   ╰──┬──╯\n   └────┬────┘\n        │"
+{"kind":"optional","item":{"kind":"terminal","text":"x"}}	"       |\n   +---+--+\n+--+--+   |\n| \"x\" |   |\n+--+--+   |\n   +---+--+\n       |"	{"ascii":true}
+{"kind":"oneOrMore","item":{"kind":"terminal","text":"x"}}	"   |\n   +---+\n+--+--+|\n| \"x\" ||\n+--+--+|\n   +---+\n   |"	{"ascii":true}
+{"kind":"zeroOrMore","item":{"kind":"terminal","text":"x"}}	"       |\n   +---+---+\n   +---+   |\n+--+--+|   |\n| \"x\" ||   |\n+--+--+|   |\n   +---+   |\n   +---+---+\n       |"	{"ascii":true}
+{"kind":"seq","items":[{"kind":"terminal","text":"a"},{"kind":"terminal","text":"b"},{"kind":"terminal","text":"c"}]}	"   |\n+--+--+\n| \"a\" |\n+--+--+\n   |\n+--+--+\n| \"b\" |\n+--+--+\n   |\n+--+--+\n| \"c\" |\n+--+--+\n   |"	{"ascii":true}
+{"kind":"bogus"}	ERROR
