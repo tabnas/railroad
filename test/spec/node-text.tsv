@@ -1,0 +1,13 @@
+node	text
+{"kind":"terminal","text":"hi"}	"\"hi\""
+{"kind":"nonterminal","text":"expr"}	"expr"
+{"kind":"comment","text":"note"}	"/* note */"
+{"kind":"skip"}	""
+{"kind":"seq","items":[{"kind":"terminal","text":"a"},{"kind":"terminal","text":"b"}]}	"\"a\" \"b\""
+{"kind":"choice","items":[{"kind":"terminal","text":"a"},{"kind":"terminal","text":"b"}]}	"(\"a\" | \"b\")"
+{"kind":"optional","item":{"kind":"terminal","text":"a"}}	"[\"a\"]"
+{"kind":"oneOrMore","item":{"kind":"terminal","text":"a"}}	"\"a\"+"
+{"kind":"zeroOrMore","item":{"kind":"terminal","text":"a"}}	"{\"a\"}"
+{"kind":"diagram","items":[{"kind":"seq","items":[{"kind":"terminal","text":"GET"},{"kind":"nonterminal","text":"path"}]}]}	"\"GET\" path"
+{"kind":"diagram","items":[{"kind":"seq","items":[{"kind":"terminal","text":"["},{"kind":"optional","item":{"kind":"seq","items":[{"kind":"nonterminal","text":"item"},{"kind":"zeroOrMore","item":{"kind":"seq","items":[{"kind":"terminal","text":","},{"kind":"nonterminal","text":"item"}]}}]}},{"kind":"terminal","text":"]"}]}]}	"\"[\" [item {\",\" item}] \"]\""
+{"kind":"bogus"}	ERROR
