@@ -155,9 +155,10 @@ type LegendEntry struct {
 // GrammarModel is one whole grammar: an ordered rule map plus the entry
 // rule. This is the declarative artifact emitted as grammar.railroad.json.
 //
-// RuleOrder preserves the insertion order of rule names (Go maps have no
-// stable order); the renderers and JSON emitter use it so output is
-// deterministic and matches the TS object-key order.
+// RuleOrder preserves the order of rule names (Go maps have no stable
+// order); the renderers and JSON emitter use it so output is deterministic
+// and matches the TS object-key order. ExtractGrammar fills it from the
+// engine's (*Tabnas).RuleNames(), i.e. the grammar's declaration order.
 type GrammarModel struct {
 	Start     string                   `json:"start"`
 	Rules     map[string]*RailroadNode `json:"rules"`

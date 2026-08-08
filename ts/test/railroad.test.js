@@ -9,6 +9,8 @@ const {
   railroad: railroadPlugin,
   renderNodeSvg,
   renderNodeAscii,
+  modelToSvg,
+  modelToAscii,
   toText,
   Diagram,
   Sequence,
@@ -127,6 +129,33 @@ describe('railroad (node-level)', () => {
     })
     it('an invalid node value throws RailroadError', () => {
       assert.throws(() => Sequence(null), RailroadError)
+    })
+  })
+
+
+  // The renderers emit rules in the model's own key order, hoisting `start`
+  // to the front — never alphabetically. Extraction preserves the grammar's
+  // declaration order here (JS objects are insertion-ordered), so this pins
+  // the renderer contract that the Go port must track.
+  describe('whole-model rule ordering', () => {
+    const model = {
+      start: 'mid',
+      // Neither alphabetical nor start-first.
+      rules: { zebra: Terminal('z'), alpha: Terminal('a'), mid: Terminal('m') },
+    }
+    const want = ['mid', 'zebra', 'alpha']
+
+    it('ascii renders rules in declared order, start first', () => {
+      const got = modelToAscii(model)
+        .split('\n')
+        .filter((l) => /^\S+:$/.test(l))
+        .map((l) => l.slice(0, -1))
+      assert.deepEqual(got, want)
+    })
+
+    it('svg renders rules in declared order, start first', () => {
+      const got = [...modelToSvg(model).matchAll(/<g id="([^"]+)">/g)].map((m) => m[1])
+      assert.deepEqual(got, want)
     })
   })
 

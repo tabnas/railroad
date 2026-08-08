@@ -164,11 +164,16 @@ type GrammarModel struct {
 }
 ```
 
-`RuleOrder` makes output deterministic (Go maps are unordered). `MarshalJSON`
-emits rules in `RuleOrder`; `UnmarshalJSON` recovers it from the raw JSON key
-order. Rule-map key order is **not** part of the cross-language contract —
-the Go model orders user rules deterministically, which may differ from the
-TS object-key order, but `Start` is always rendered first.
+`RuleOrder` carries the rule order a Go map cannot (`MarshalJSON` emits rules
+in it; `UnmarshalJSON` recovers it from the raw JSON key order). On
+extraction it is the grammar's **declaration** order, read from the engine's
+`(*Tabnas).RuleNames()`, which is the same order the TS extractor gets from
+`Object.keys(rsm)`. `Start` is always rendered first regardless.
+
+A grammar that declares no order gets alphabetical: a plugin registering a
+bare `GrammarSpec` must set `GrammarSpec.RuleOrder` for the engine to stamp
+its rules in sequence (`GrammarText` does this for itself). See the repo
+`AGENTS.md` §"Rule order".
 
 ### `LegendEntry`
 

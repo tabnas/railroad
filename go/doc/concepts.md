@@ -150,9 +150,12 @@ Concrete differences:
   `factor` (default behaviour is identical: factoring on). `AsciiOptions.Plain`
   is TS's `ascii: true`. `SvgOptions.LinkFor` returns `(string, bool)` rather
   than `string | undefined`.
-- **Deterministic rule order via `RuleOrder`.** Go maps are unordered, so the
-  model carries a `RuleOrder` slice and the custom `MarshalJSON` emits rules
-  in that order. TS relies on JS object insertion order instead.
+- **Rule order via `RuleOrder`.** Go maps are unordered, so the model carries
+  a `RuleOrder` slice and the custom `MarshalJSON` emits rules in that order.
+  TS relies on JS object insertion order instead. Extraction fills the slice
+  from the engine's `(*Tabnas).RuleNames()`, so both runtimes end up in the
+  grammar's declaration order — see the repo `AGENTS.md` §"Rule order" for
+  the one caveat (a `GrammarSpec` that declares no `RuleOrder`).
 - **Token-set name recovery.** The TS extractor reads the raw `#KEY` / `#VAL`
   token-set name strings straight off each alt. The Go engine does not retain
   those strings on the live `RuleSpec` — it resolves them to `[]Tin` sets — so

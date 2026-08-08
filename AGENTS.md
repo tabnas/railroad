@@ -22,13 +22,16 @@ is the `@tabnas/railroad` dev-only `file:` devDependency they use to
 (re)generate the `ts/doc/grammar.{svg,txt}` README diagrams. It is the same
 role `@tabnas/debug` plays for introspection — a tool, not a grammar.
 
-This is a **TypeScript-only** package: there is **no Go port** (no `go/`).
+There **is** a Go port in `go/` (`package tabnasrailroad`, plus
+`cmd/tabnas-railroad`). `ts/` stays **canonical**; `go/` tracks it.
 
 ## Repository map
 
 | Path | What it is |
 |---|---|
-| [`ts/`](ts/) | The whole package — `@tabnas/railroad` (currently `0.1.0`). There is no Go side; outside `ts/` the repo root holds only `README.md`, `Makefile`, `LICENSE`, `examples/`, and the `.github/` CI. |
+| [`ts/`](ts/) | The canonical package — `@tabnas/railroad` (currently `0.2.3`). |
+| [`go/`](go/) | The Go port — `package tabnasrailroad` (`model.go`, `extract.go`, `svg.go`, `ascii.go`, `railroad.go`) + the `cmd/tabnas-railroad` CLI, mirroring the TS files one-for-one. `const Version` in `go/model.go` tracks the npm version. |
+| [`test/spec/`](test/spec/) | Shared cross-runtime `*.tsv` fixtures (`node-text.tsv`, `node-ascii.tsv`), run by BOTH runtimes. See [`test/AGENTS.md`](test/AGENTS.md). |
 | [`ts/src/model.ts`](ts/src/model.ts) | The `RailroadNode` tagged union + `GrammarModel` envelope, node constructors (`Terminal`/`NonTerminal`/`Comment`/`Skip`/`Sequence`/`Choice`/`Optional`/`OneOrMore`/`ZeroOrMore`/`Diagram`), `toText`, `norm`, `nodeEqual`, `RailroadError`. Pure data — the interchange format. |
 | [`ts/src/extract.ts`](ts/src/extract.ts) | `extractGrammar(tn)` — reverse-maps a live instance's alt-based rule machine into the model. **The heart of the package.** |
 | [`ts/src/svg.ts`](ts/src/svg.ts) | `modelToSvg` / `renderNodeSvg` — vertical-flow SVG renderer. |
@@ -38,7 +41,8 @@ This is a **TypeScript-only** package: there is **no Go port** (no `go/`).
 | [`ts/src/bin/tabnas-railroad-cli.ts`](ts/src/bin/tabnas-railroad-cli.ts) | The CLI implementation (`run(argv, console)`). |
 | [`ts/bin/tabnas-railroad`](ts/bin/tabnas-railroad) | CLI launcher (the `tabnas-railroad` bin); `require`s `dist/bin/tabnas-railroad-cli` and calls `run`. |
 | [`examples/json-grammar.{svg,txt}`](examples/) | Sample output: the `@tabnas/json` grammar rendered, used by the READMEs. |
-| `ts/test/*.test.js` | Committed JS tests (not compiled): `railroad.test.js` (node-level), `grammar.test.js` (extraction + CLI against `@tabnas/json`), `doc-examples.test.js` (runs `// =>` README examples). |
+| `ts/test/*.test.js` | Committed JS tests (not compiled): `railroad.test.js` (node-level + whole-model rule ordering), `grammar.test.js` (extraction + CLI against `@tabnas/json`), `doc-examples.test.js` (runs `// =>` README examples), `parity.test.js` (runs the shared `test/spec/*.tsv`). |
+| `go/*_test.go` | `railroad_test.go` / `grammar_test.go` / `parity_test.go` — the ports of the above, plus `TestParityWithTypeScriptModel` against the `go/testdata/ts-json-model.json` snapshot of the TS model. |
 
 ## The tabnas engine dependency
 
@@ -136,15 +140,22 @@ modes:
   the module, find its grammar plugin export, install it on a fresh
   `Tabnas`, introspect, and write `grammar.railroad.json` + `grammar.svg` +
   `grammar.txt` into `-o <dir>` (default `./out`).
-- **render mode** (`-f <model.json>`, or `-` for stdin): read a saved
-  `GrammarModel` and render one format to stdout (default SVG; `--json`,
-  `--svg`, `--ascii`, `--ascii-plain`, `--text`).
+- **render mode** (`-f <model.json>`, or a **bare `-`** argument for stdin —
+  note it is `… | tabnas-railroad - --text`, *not* `-f -`, which would look
+  for a file literally named `-`): read a saved `GrammarModel` and render
+  one format to stdout (default SVG; `--json`, `--svg`, `--ascii`,
+  `--ascii-plain`, `--text`).
 
 `run(argv, console)` takes the `console` sink as an argument so the tests
 drive it in-process (`grammar.test.js` passes a capturing fake console);
 keep that signature. This is how `examples/json-grammar.{svg,txt}` and the
 downstream repos' `ts/doc/grammar.*` are regenerated, e.g.
 `tabnas-railroad --grammar @tabnas/json -o examples`.
+
+The Go port ships the same CLI as `go/cmd/tabnas-railroad`, with
+`run(argv, stdin, stdout, stderr) int` as the testable seam. All the flags
+above behave identically; verified byte-for-byte against the TS CLI for
+`--json/--svg/--ascii/--ascii-plain/--text` and bare-`-` stdin.
 
 ## Scope / known limitations
 
@@ -170,25 +181,72 @@ npm test               # node --enable-source-maps --test test/**/*.test.js
 missing `dist/` makes the suite fail or run old code). `npm run reset`
 (`clean && npm i && build && test`) is the from-clean path.
 
-The repo-root [`Makefile`](Makefile) is **TS-only** (this package has no Go
-port): `make build|test|clean` map to the `ts/` npm scripts, and
-`make publish-ts` runs the tests then `npm publish --access public` at the
-`package.json` version. There is **no** `publish-go` / `const Version` /
-`go/vX.Y.Z` tagging here.
+The repo-root [`Makefile`](Makefile) drives **both** runtimes:
+`make build|test|clean` fan out to `build-ts`/`build-go`,
+`test-ts`/`test-go`, `clean-ts`/`clean-go`. `make publish-ts` runs the tests
+then `npm publish --access public` at the `package.json` version;
+`make publish-go V=x.y.z` injects `V` into `const Version` in `go/model.go`,
+commits, and tags `go/vX.Y.Z` (`make tags-go` lists those tags).
+
+From `go/`: `go build ./...` and `go test ./...`.
 
 ## CI
 
-`.github/workflows/build.yml` has a **single** `build` job (no `build-go`),
-on Ubuntu / Windows / macOS, Node 24:
-
-- sets `git config --global core.autocrlf false` (CRLF would corrupt
-  fixtures/diagrams),
-- git-clones the upstream tabnas closure (`parser debug json abnf`) as
-  siblings,
-- `npm i && npm run build --if-present` for each of
-  `parser debug json abnf railroad` in order,
-- then `npm test` in `railroad/ts`.
+`.github/workflows/ci.yml` is a thin caller of the org-standard reusable
+workflow `tabnas/.github/.github/workflows/polyglot-ci.yml@main`, passing
+`deps: "parser debug json abnf"` (the upstream closure cloned as siblings).
+It runs on push/PR to `main`, and covers both the TS and Go sides. The
+workflow file is promoted by a maintainer via
+`tabnas/admin rollout/apply-ci-folders.sh` — session credentials cannot
+write `.github/workflows/*` (admin `DECISIONS.md` ADR-8), so edit it there,
+not here. `.github/workflows/release.yml` handles releases.
 
 The `@tabnas/json` clone is what makes the grammar-extraction and CLI tests
 runnable in CI; `npm test` includes them because `json` is a `file:`
 devDependency.
+
+## Rule order
+
+The two runtimes produce **byte-identical** ASCII and SVG for the same
+`GrammarModel` — verified by feeding the TS-extracted model through the Go
+renderers — and both now put rules in the model in **grammar declaration
+order**.
+
+- **TS** iterates `Object.keys(rsm)`; a JS object literal keeps insertion
+  order for free (`val, map, list, pair, elem` for `@tabnas/json`).
+- **Go** asks the engine. `@tabnas/parser`'s Go port stamps every rule spec
+  with a definition index (`RuleSpec.Def`) at registration and exposes the
+  walk as `(*Tabnas).RuleNames()` / `Rules()`. `declaredUserRules` in
+  `extract.go` filters that to user rules and it becomes
+  `GrammarModel.RuleOrder`, which `MarshalJSON`, `UnmarshalJSON` (which
+  recovers key order from the raw JSON) and `orderRules` in `svg.go` already
+  carried. `extract.go` no longer sorts; the old `sortedUserRules` is gone.
+
+This is a **new engine API**, not in a published release. `go/go.mod` still
+requires `github.com/tabnas/parser/go v0.6.1`, which has no `RuleNames`, so
+`go/` compiles only against the sibling engine — the repo `go.work` locally,
+the `go work` step in the CI workflow. `GOWORK=off go build ./...` fails
+until `go/go.mod` is bumped past the release that carries `RuleNames`. That
+bump is the one remaining step.
+
+### Caveat: order is only as good as the grammar's declaration
+
+A Go map has no order for the engine to recover, so a plugin registering a
+bare `GrammarSpec` **must** state `GrammarSpec.RuleOrder`; without it the
+engine stamps the rules in sorted-name order and `RuleNames()` reports
+alphabetical. `GrammarText` fills `RuleOrder` in automatically from the
+source key order, so text grammars need nothing.
+
+`@tabnas/json`'s Go plugin (`RegisterJSONGrammar`) does not yet set
+`RuleOrder`, so the extracted Go model for the JSON grammar is still
+`elem, list, map, pair, val` where TS gives `val, map, list, pair, elem`.
+That is the **json** repo's to fix (add `RuleOrder` to its `GrammarSpec`),
+not railroad's — railroad now reports faithfully whatever the grammar
+declared. `examples/json-grammar.{svg,txt}` are TS-generated and already
+show declaration order.
+
+Note `TestParityWithTypeScriptModel` compares rules **by name**, so it does
+not assert order. The ordering contract is pinned by
+`TestExtractionHonoursDeclarationOrder` (extraction) and
+`TestRenderersHonourDeclaredRuleOrder` (rendering) in Go, and the
+`whole-model rule ordering` block in `ts/test/railroad.test.js`.
