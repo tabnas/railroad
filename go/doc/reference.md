@@ -9,7 +9,9 @@ import tabnasrailroad "github.com/tabnas/railroad/go"
 ```
 
 Package name: `tabnasrailroad`. Module path:
-`github.com/tabnas/railroad/go`. Current `Version` constant: `"0.1.0"`.
+`github.com/tabnas/railroad/go`. The `VERSION` constant holds the module's
+version; it always equals `ts/package.json` "version" (`version_test.go`
+enforces that), so read it there rather than quoting a literal here.
 
 ## The plugin and API
 

@@ -40,11 +40,11 @@ clean-go:
 	cd go && go clean
 
 # Publish the Go module: make publish-go V=x.y.z
-# Injects V into the Go `Version` const (in go/model.go), commits, tags
+# Injects V into the Go `VERSION` const (in go/model.go), commits, tags
 # go/vX.Y.Z, and (when gh is available) creates a GitHub release.
 publish-go: test-go
 	@test -n "$(V)" || (echo "Usage: make publish-go V=x.y.z" && exit 1)
-	sed -i.bak 's/^const Version = ".*"/const Version = "$(V)"/' go/model.go
+	sed -i.bak 's/^const VERSION = ".*"/const VERSION = "$(V)"/' go/model.go
 	rm -f go/model.go.bak
 	git add go/model.go
 	git commit -m "go: v$(V)"
