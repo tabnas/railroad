@@ -29,7 +29,7 @@ There **is** a Go port in `go/` (`package tabnasrailroad`, plus
 
 | Path | What it is |
 |---|---|
-| [`ts/`](ts/) | The canonical package — `@tabnas/railroad` (currently `0.2.3`). |
+| [`ts/`](ts/) | The canonical package — `@tabnas/railroad`. |
 | [`go/`](go/) | The Go port — `package tabnasrailroad` (`model.go`, `extract.go`, `svg.go`, `ascii.go`, `railroad.go`) + the `cmd/tabnas-railroad` CLI, mirroring the TS files one-for-one. `const Version` in `go/model.go` tracks the npm version. |
 | [`test/spec/`](test/spec/) | Shared cross-runtime `*.tsv` fixtures (`node-text.tsv`, `node-ascii.tsv`), run by BOTH runtimes. See [`test/AGENTS.md`](test/AGENTS.md). |
 | [`ts/src/model.ts`](ts/src/model.ts) | The `RailroadNode` tagged union + `GrammarModel` envelope, node constructors (`Terminal`/`NonTerminal`/`Comment`/`Skip`/`Sequence`/`Choice`/`Optional`/`OneOrMore`/`ZeroOrMore`/`Diagram`), `toText`, `norm`, `nodeEqual`, `RailroadError`. Pure data — the interchange format. |
