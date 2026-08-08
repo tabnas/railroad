@@ -166,7 +166,7 @@ func ExtractGrammar(tn *tabnas.Tabnas, opts ...*ExtractOptions) *GrammarModel {
 		if cfg != nil && cfg.RuleStart != "" {
 			start = cfg.RuleStart
 		} else {
-			start = firstUserRule(rsm)
+			start = firstUserRule(tn)
 		}
 	}
 	if start == "__start__" {
@@ -178,7 +178,7 @@ func ExtractGrammar(tn *tabnas.Tabnas, opts ...*ExtractOptions) *GrammarModel {
 	}
 
 	rules := map[string]*RailroadNode{}
-	order := sortedUserRules(rsm)
+	order := declaredUserRules(tn)
 	for _, name := range order {
 		rules[name] = ruleNode(name, c, map[string]bool{})
 	}
@@ -847,8 +847,11 @@ func isUserRule(name string) bool {
 	return name != "__start__" && !isSynthetic(name)
 }
 
-func firstUserRule(rsm map[string]*tabnas.RuleSpec) string {
-	for _, name := range sortedKeys(rsm) {
+// firstUserRule is the fallback entry rule when neither the caller nor
+// cfg.rule.start names one: the FIRST user rule the grammar declared,
+// mirroring ts/extract.ts `Object.keys(rsm).find(isUserRule)`.
+func firstUserRule(tn *tabnas.Tabnas) string {
+	for _, name := range tn.RuleNames() {
 		if isUserRule(name) {
 			return name
 		}
@@ -856,26 +859,25 @@ func firstUserRule(rsm map[string]*tabnas.RuleSpec) string {
 	return ""
 }
 
-// sortedUserRules returns the user rules in a deterministic order: the
-// engine's RSM is a Go map (unordered), so we sort the keys to make the
-// model's rule order stable across runs.
-func sortedUserRules(rsm map[string]*tabnas.RuleSpec) []string {
+// declaredUserRules returns the user rules in the order the grammar
+// declared them, mirroring the TS side's `Object.keys(rsm)` walk (a JS
+// object literal keeps insertion order for free).
+//
+// The engine's RSM() is a plain Go map with no order, so this asks
+// (*Tabnas).RuleNames, which sorts by the definition index the engine
+// stamps at registration. Note the order is only as good as what the
+// grammar declared: a plugin that registers via a bare GrammarSpec whose
+// Rule map has no matching RuleOrder gives the engine nothing to stamp in
+// sequence, and RuleNames falls back to alphabetical. GrammarText fills
+// RuleOrder in automatically from the source key order. See AGENTS.md.
+func declaredUserRules(tn *tabnas.Tabnas) []string {
 	out := []string{}
-	for _, name := range sortedKeys(rsm) {
+	for _, name := range tn.RuleNames() {
 		if isUserRule(name) {
 			out = append(out, name)
 		}
 	}
 	return out
-}
-
-func sortedKeys(rsm map[string]*tabnas.RuleSpec) []string {
-	keys := make([]string, 0, len(rsm))
-	for k := range rsm {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
 }
 
 func unwrapStart(spec *tabnas.RuleSpec) string {

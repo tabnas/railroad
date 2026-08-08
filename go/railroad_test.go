@@ -7,6 +7,7 @@ package tabnasrailroad
 
 import (
 	"errors"
+	"reflect"
 	"regexp"
 	"strings"
 	"testing"
@@ -199,6 +200,118 @@ func TestInvalidNodeErrors(t *testing.T) {
 	}
 	if _, err := ToText(nil); err == nil {
 		t.Errorf("ToText(nil) should error")
+	}
+}
+
+// ---- whole-model rule ordering --------------------------------------
+
+// The renderers must emit rules in the model's declared RuleOrder, hoisting
+// Start to the front — NOT in alphabetical or Go map order. This pins the
+// renderer half with a hand-built model whose order is deliberately neither
+// alphabetical nor start-first; TestExtractionHonoursDeclarationOrder below
+// pins the extraction half.
+func TestRenderersHonourDeclaredRuleOrder(t *testing.T) {
+	mk := func(s string) *RailroadNode {
+		n, err := Norm(s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	model := &GrammarModel{
+		Start: "mid",
+		Rules: map[string]*RailroadNode{
+			"zebra": mk("z"),
+			"alpha": mk("a"),
+			"mid":   mk("m"),
+		},
+		// Neither alphabetical nor start-first.
+		RuleOrder: []string{"zebra", "alpha", "mid"},
+	}
+	want := []string{"mid", "zebra", "alpha"} // Start hoisted, rest in order.
+
+	ascii, err := ModelToAscii(model)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, line := range strings.Split(ascii, "\n") {
+		if strings.HasSuffix(line, ":") && !strings.ContainsAny(line, " \t") {
+			got = append(got, strings.TrimSuffix(line, ":"))
+		}
+	}
+	if strings.Join(got, ",") != strings.Join(want, ",") {
+		t.Errorf("ascii rule order = %v, want %v", got, want)
+	}
+
+	svg, err := ModelToSvg(model)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var svgGot []string
+	for _, m := range regexp.MustCompile(`<g id="([^"]+)">`).FindAllStringSubmatch(svg, -1) {
+		svgGot = append(svgGot, m[1])
+	}
+	if strings.Join(svgGot, ",") != strings.Join(want, ",") {
+		t.Errorf("svg rule order = %v, want %v", svgGot, want)
+	}
+}
+
+// ExtractGrammar must put rules in the model in the order the GRAMMAR
+// declared them, matching the TS side's `Object.keys(rsm)` walk — not the
+// alphabetical order a Go map walk has to be sorted into. The engine
+// reports it via (*Tabnas).RuleNames; extract.go's declaredUserRules is the
+// consumer.
+//
+// A struct grammar states its order in GrammarSpec.RuleOrder (a Go map has
+// none to recover); GrammarText fills the same field in from the source key
+// order. The rule names here are chosen so declaration order is neither
+// alphabetical nor its reverse, so a sort in either direction fails this.
+func TestExtractionHonoursDeclarationOrder(t *testing.T) {
+	declared := []string{"zebra", "alpha", "mid"}
+
+	tn := tabnas.Make()
+	err := tn.Grammar(&tabnas.GrammarSpec{
+		V: 2,
+		Rule: map[string]*tabnas.GrammarRuleSpec{
+			"zebra": {Open: []*tabnas.GrammarAltSpec{{S: "#TX", P: "alpha"}}},
+			"alpha": {Open: []*tabnas.GrammarAltSpec{{S: "#TX", P: "mid"}}},
+			"mid":   {Open: []*tabnas.GrammarAltSpec{{S: "#TX"}}},
+		},
+		RuleOrder: declared,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	model := ExtractGrammar(tn, &ExtractOptions{Start: "mid"})
+	if got := model.RuleOrder; !reflect.DeepEqual(got, declared) {
+		t.Errorf("RuleOrder = %v, want %v", got, declared)
+	}
+
+	// The last-resort entry rule (neither the caller nor cfg.rule.start names
+	// one) is the FIRST rule declared, not the alphabetically first — the
+	// same rule ts/extract.ts's `Object.keys(rsm).find(isUserRule)` picks.
+	if got := firstUserRule(tn); got != "zebra" {
+		t.Errorf("firstUserRule = %q, want %q", got, "zebra")
+	}
+
+	// The renderers then hoist Start and keep the rest in that order.
+	ascii, err := ModelToAscii(model)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, line := range strings.Split(ascii, "\n") {
+		name := strings.TrimSuffix(line, ":")
+		if strings.HasSuffix(line, ":") && !strings.ContainsAny(line, " \t") &&
+			model.Rules[name] != nil {
+			got = append(got, name)
+		}
+	}
+	want := []string{"mid", "zebra", "alpha"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("ascii rule order = %v, want %v", got, want)
 	}
 }
 
