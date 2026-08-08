@@ -30,7 +30,7 @@ There **is** a Go port in `go/` (`package tabnasrailroad`, plus
 | Path | What it is |
 |---|---|
 | [`ts/`](ts/) | The canonical package — `@tabnas/railroad`. |
-| [`go/`](go/) | The Go port — `package tabnasrailroad` (`model.go`, `extract.go`, `svg.go`, `ascii.go`, `railroad.go`) + the `cmd/tabnas-railroad` CLI, mirroring the TS files one-for-one. `const Version` in `go/model.go` tracks the npm version. |
+| [`go/`](go/) | The Go port — `package tabnasrailroad` (`model.go`, `extract.go`, `svg.go`, `ascii.go`, `railroad.go`) + the `cmd/tabnas-railroad` CLI, mirroring the TS files one-for-one. `const VERSION` in `go/model.go` tracks the npm version, and `go/version_test.go` fails the build if it drifts from `ts/package.json`. |
 | [`test/spec/`](test/spec/) | Shared cross-runtime `*.tsv` fixtures (`node-text.tsv`, `node-ascii.tsv`), run by BOTH runtimes. See [`test/AGENTS.md`](test/AGENTS.md). |
 | [`ts/src/model.ts`](ts/src/model.ts) | The `RailroadNode` tagged union + `GrammarModel` envelope, node constructors (`Terminal`/`NonTerminal`/`Comment`/`Skip`/`Sequence`/`Choice`/`Optional`/`OneOrMore`/`ZeroOrMore`/`Diagram`), `toText`, `norm`, `nodeEqual`, `RailroadError`. Pure data — the interchange format. |
 | [`ts/src/extract.ts`](ts/src/extract.ts) | `extractGrammar(tn)` — reverse-maps a live instance's alt-based rule machine into the model. **The heart of the package.** |
@@ -185,8 +185,14 @@ The repo-root [`Makefile`](Makefile) drives **both** runtimes:
 `make build|test|clean` fan out to `build-ts`/`build-go`,
 `test-ts`/`test-go`, `clean-ts`/`clean-go`. `make publish-ts` runs the tests
 then `npm publish --access public` at the `package.json` version;
-`make publish-go V=x.y.z` injects `V` into `const Version` in `go/model.go`,
+`make publish-go V=x.y.z` injects `V` into `const VERSION` in `go/model.go`,
 commits, and tags `go/vX.Y.Z` (`make tags-go` lists those tags).
+
+Both runtimes bake in a `VERSION` constant — `const VERSION` in
+`go/model.go`, the exported `VERSION` in `ts/src/railroad.ts` — and both are
+guarded: `go/version_test.go` and `ts/test/version.test.js` read
+`ts/package.json` and fail (never skip) if the constant has drifted from it.
+Bump one by hand and the other must follow, or CI goes red.
 
 From `go/`: `go build ./...` and `go test ./...`.
 
@@ -222,12 +228,12 @@ order**.
   recovers key order from the raw JSON) and `orderRules` in `svg.go` already
   carried. `extract.go` no longer sorts; the old `sortedUserRules` is gone.
 
-This is a **new engine API**, not in a published release. `go/go.mod` still
-requires `github.com/tabnas/parser/go v0.6.1`, which has no `RuleNames`, so
-`go/` compiles only against the sibling engine — the repo `go.work` locally,
-the `go work` step in the CI workflow. `GOWORK=off go build ./...` fails
-until `go/go.mod` is bumped past the release that carries `RuleNames`. That
-bump is the one remaining step.
+`RuleNames` was a new engine API when this was written, ahead of any
+published release, so `go/` compiled only against the sibling engine. That is
+no longer true: `go/go.mod` now requires an engine release that carries
+`RuleNames`, and `GOWORK=off go build ./...` succeeds against the published
+module. The `go.work` and the CI `go work` step are still what pick up local
+sibling changes, but they are no longer required to compile.
 
 ### Caveat: order is only as good as the grammar's declaration
 
