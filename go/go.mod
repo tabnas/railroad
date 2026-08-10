@@ -8,5 +8,5 @@ require (
 	// extract.go calls (*Tabnas).RuleNames; this requirement is at or past the
 	// release that added it, so `GOWORK=off go build ./...` works. See
 	// ../AGENTS.md, "Rule order".
-	github.com/tabnas/parser/go v0.7.0
+	github.com/tabnas/parser/go v0.8.0
 )
