@@ -23,8 +23,9 @@ The **second column's header name selects the renderer** run over the node:
 - `ascii` — `renderNodeAscii(node, opts)` / `RenderNodeAscii(node, ...)`.
 
 Either way the cell holds the rendered string **as JSON** (so newlines and
-quotes are unambiguous), or `ERROR` / `ERROR:<substring>` when the render
-must fail.
+quotes are unambiguous), or `ERROR` / `ERROR:<code>` when the render must
+fail. A code is compared exactly; a bare `ERROR` accepts any failure,
+which is what the two `{"kind":"bogus"}` rows use.
 
 The `opts` column uses the TypeScript spelling, `{"ascii":true}` for plain
 7-bit output. Go's equivalent field is `AsciiOptions.Plain`; the Go runner
@@ -32,11 +33,19 @@ maps the one to the other.
 
 ## Who runs what
 
-- TypeScript: `ts/test/parity.test.js` — reads `../../test/spec`.
-- Go: `go/parity_test.go` — `TestSpec` globs `../test/spec/*.tsv`.
+- TypeScript: `ts/test/parity.test.js` — a `makeRunner(...)` per fixture.
+- Go: `go/parity_test.go` — a `support.Runner{...}` per fixture.
+
+One runner per FILE, not one over the directory, because the renderer is
+named by the second column's header. Everything else — finding
+`test/spec`, reading the file, decoding escapes, the `ERROR:` contract,
+the comparison, the `<file>:<line>` in a failure message — comes from
+[`@tabnas/support`](https://github.com/tabnas/support) and its Go half, so
+the two loaders cannot drift from each other either.
 
 Both discover files by directory listing: adding a `.tsv` here runs it in
-both runtimes without touching either runner.
+both runtimes without touching either runner. An empty fixture, and a spec
+directory with no fixtures in it, both **fail**.
 
 `go/testdata/ts-json-model.json` stays outside this directory: it is a
 generated snapshot of the whole extracted model for the @tabnas/json
