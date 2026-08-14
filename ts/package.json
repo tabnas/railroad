@@ -5,7 +5,7 @@
   "type": "commonjs",
   "types": "dist/railroad.d.ts",
   "description": "Railroad (syntax) diagram renderer for the tabnas parser.",
-  "homepage": "https://github.com/rjrodger/tabnas-railroad",
+  "homepage": "https://github.com/tabnas/railroad",
   "keywords": [
     "tabnas",
     "railroad",
