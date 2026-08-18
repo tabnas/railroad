@@ -95,7 +95,7 @@ const railroad: Plugin = function railroad(tn: Tabnas, _options?: any): void {
 // VERSION is this package's version. It MUST equal package.json "version":
 // the release orchestrator rewrites both, and the version test fails the
 // build if they drift. Mirrors `const VERSION` in go/model.go.
-const VERSION = '0.3.2'
+const VERSION = '0.3.3'
 
 
 export {
