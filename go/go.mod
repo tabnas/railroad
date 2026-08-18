@@ -3,7 +3,7 @@ module github.com/tabnas/railroad/go
 go 1.24.7
 
 require (
-	github.com/tabnas/json/go v0.5.3
+	github.com/tabnas/json/go v0.5.4
 
 	// extract.go calls (*Tabnas).RuleNames; this requirement is at or past the
 	// release that added it, so `GOWORK=off go build ./...` works. See
