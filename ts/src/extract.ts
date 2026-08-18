@@ -129,7 +129,11 @@ export function extractGrammar(tn: any, opts: ExtractOptions = {}): GrammarModel
     start = unwrapStart(rsm['__start__']) || start
   }
 
-  const rules: { [name: string]: RailroadNode } = {}
+  // Keyed by grammar rule name. On a plain literal a rule named __proto__ is
+  // not an ordinary key - the assignment runs the Object.prototype setter, so
+  // the rule silently vanishes from the diagram and this map is reparented by
+  // the node object it was given.
+  const rules: { [name: string]: RailroadNode } = Object.create(null)
   for (const name of Object.keys(rsm)) {
     if (!isUserRule(name)) continue
     rules[name] = ruleNode(name, ctx, new Set())
