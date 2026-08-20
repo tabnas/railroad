@@ -48,11 +48,27 @@ func TestParityWithTypeScriptModel(t *testing.T) {
 	// Every field the contract names, including the ones that agree
 	// today: a test that only checks what once differed stops covering
 	// the rest the moment it agrees.
-	for _, field := range []string{"start", "meta", "legend", "ignored"} {
+	for _, field := range []string{"start", "legend", "ignored"} {
 		if !reflect.DeepEqual(got[field], want[field]) {
 			t.Errorf("%s differs from the TypeScript model:\n go: %#v\n ts: %#v",
 				field, got[field], want[field])
 		}
+	}
+
+	// meta.ENGINE, not the whole meta map. go/doc/concepts.md:125 states
+	// the contract as "same start, same per-rule node trees, same legend,
+	// same ignored set, same meta.engine", and GrammarModel.Meta is
+	// map[string]any — deliberately open-ended. Comparing all of it would
+	// fail on a runtime adding its own metadata while the documented
+	// contract still held, which is a gate breaking over something it was
+	// never asked to police.
+	if engineOf(got["meta"]) != engineOf(want["meta"]) {
+		t.Errorf("meta.engine differs from the TypeScript model:\n go: %#v\n ts: %#v",
+			engineOf(got["meta"]), engineOf(want["meta"]))
+	}
+	if nil == engineOf(want["meta"]) {
+		t.Error("sanity: the snapshot carries no meta.engine, so comparing " +
+			"it against this port's proves nothing")
 	}
 
 	gotRules, ok := got["rules"].(map[string]any)
@@ -79,6 +95,14 @@ func TestParityWithTypeScriptModel(t *testing.T) {
 			t.Errorf("rule %q node tree differs:\n go: %s\n ts: %s", name, g, w)
 		}
 	}
+}
+
+func engineOf(meta any) any {
+	m, ok := meta.(map[string]any)
+	if !ok {
+		return nil
+	}
+	return m["engine"]
 }
 
 func names(m map[string]any) []string {
