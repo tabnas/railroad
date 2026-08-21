@@ -8,10 +8,12 @@
 <!-- /tabnas-badges -->
 
 Railroad (syntax) diagram renderer for the
-[tabnas](https://github.com/rjrodger/tabnas) parser — introspects a tabnas
+[tabnas](https://github.com/tabnas/parser) parser — introspects a tabnas
 instance's installed grammar and emits a declarative JSON model, a
 vertical-flow SVG, and a vertical ASCII diagram. Also ships a
 `tabnas-railroad` CLI.
+
+Docs, guides, the error reference and the playground: **[tabnas.dev](https://tabnas.dev)**.
 
 This repository contains:
 
