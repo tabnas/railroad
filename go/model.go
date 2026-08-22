@@ -22,7 +22,7 @@ import (
 // VERSION is this module's version. It MUST equal ts/package.json
 // "version": the release orchestrator rewrites both, and
 // TestVersionMatchesPackageJSON fails the build if they drift.
-const VERSION = "0.3.5"
+const VERSION = "0.3.6"
 
 // NodeKind enumerates the railroad node variants (the tagged-union tag).
 type NodeKind = string
