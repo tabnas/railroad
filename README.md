@@ -8,7 +8,7 @@
 <!-- /tabnas-badges -->
 
 Railroad (syntax) diagram renderer for the
-[tabnas](https://github.com/tabnas/parser) parser — introspects a tabnas
+[tabnas](https://github.com/tabnas/parser) parser, introspects a tabnas
 instance's installed grammar and emits a declarative JSON model, a
 vertical-flow SVG, and a vertical ASCII diagram. Also ships a
 `tabnas-railroad` CLI.
@@ -56,7 +56,7 @@ The `@tabnas/json` grammar rendered to a vertical-flow diagram
 
 ![railroad diagram of the @tabnas/json grammar](examples/json-grammar.svg)
 
-The same grammar as an ASCII diagram (excerpt — the `val` choice and the
+The same grammar as an ASCII diagram (excerpt: the `val` choice and the
 `pair` loop; full output in
 [`examples/json-grammar.txt`](examples/json-grammar.txt)):
 

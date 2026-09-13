@@ -1,4 +1,4 @@
-# How-to guide — railroad recipes
+# How-to guide: railroad recipes
 
 Focused recipes for real tasks. Each is self-contained. For the full API
 see [reference.md](reference.md); for the why see [concepts.md](concepts.md).
@@ -23,7 +23,7 @@ const tn = new Tabnas({ plugins: [myGrammar, railroad] })
 console.log(tn.railroad.toAscii())
 ```
 
-Install order is irrelevant — the helpers re-introspect the live grammar on
+Install order is irrelevant: the helpers re-introspect the live grammar on
 each call, so `[railroad, myGrammar]` works too.
 
 ## Save the three artifacts to disk
@@ -102,7 +102,7 @@ const { railroad, modelToSvg, modelToAscii } = require('@tabnas/railroad')
 const tn = new Tabnas({ plugins: [json, railroad] })
 const model = tn.railroad.toJson()
 
-// round-trip through JSON, then render — identical output.
+// round-trip through JSON, then render: identical output.
 const reloaded = JSON.parse(JSON.stringify(model))
 modelToSvg(reloaded) === modelToSvg(model)       // => true
 modelToAscii(reloaded) === modelToAscii(model)   // => true
@@ -120,7 +120,7 @@ cat diagrams/grammar.railroad.json | npx tabnas-railroad - --text
 ## Hand-build a diagram (no grammar at all)
 
 The node constructors are exported, so you can draw any railroad diagram by
-hand — useful for documentation snippets unrelated to a tabnas grammar.
+hand, which is useful for documentation snippets unrelated to a tabnas grammar.
 
 ```js
 const { Sequence, Optional, toText } = require('@tabnas/railroad')
@@ -142,11 +142,11 @@ renderNodeSvg(node).startsWith('<svg ')   // => true
 
 The constructors are also reachable through the plugin member as short
 aliases (`tn.railroad.seq`, `.choice`, `.opt`, `.plus`, `.star`, `.t`,
-`.n`, ...) — see [reference.md](reference.md).
+`.n` and the rest); see [reference.md](reference.md).
 
 ## Read the token legend
 
-Token labels that are not self-explanatory punctuation (e.g. the `KEY` /
+Token labels that are not self-explanatory punctuation (for example the `KEY` /
 `VAL` token sets) get a `legend` entry; tokens the lexer silently skips
 (whitespace, comments) are reported in `ignored`. Both are also rendered
 into the SVG and ASCII as "Tokens" / "Ignored tokens" keys.

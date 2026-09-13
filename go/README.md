@@ -1,12 +1,12 @@
 # github.com/tabnas/railroad/go
 
-Go port of [`@tabnas/railroad`](../ts) — a railroad (syntax) diagram
+Go port of [`@tabnas/railroad`](../ts), a railroad (syntax) diagram
 generator for the [`tabnas`](https://github.com/tabnas/parser) parsing
 engine.
 
 It does **not** parse anything itself: it **introspects a live `Tabnas`
 instance that already has a grammar installed** and emits three artifacts
-from that grammar —
+from that grammar:
 
 - a declarative, JSON-serializable **`GrammarModel`** (the interchange
   format: one node tree per rule),
@@ -27,10 +27,10 @@ same vertical-flow output.
 
 Four-quadrant [Diátaxis](https://diataxis.fr/) docs:
 
-- [doc/tutorial.md](doc/tutorial.md) — zero to a rendered diagram, step by step.
-- [doc/guide.md](doc/guide.md) — focused how-to recipes.
-- [doc/reference.md](doc/reference.md) — the exact API surface and CLI flags.
-- [doc/concepts.md](doc/concepts.md) — how introspection and vertical-flow
+- [doc/tutorial.md](doc/tutorial.md). Zero to a rendered diagram, step by step.
+- [doc/guide.md](doc/guide.md). Focused how-to recipes.
+- [doc/reference.md](doc/reference.md). The exact API surface and CLI flags.
+- [doc/concepts.md](doc/concepts.md). How introspection and vertical-flow
   layout work, and the [differences from the TS version](doc/concepts.md#differences-from-the-ts-version).
 
 The canonical TypeScript implementation lives in [`../ts`](../ts).
@@ -89,14 +89,14 @@ svg, _ := tabnasrailroad.RenderNodeSvg(node)
 
 ## Exports
 
-- `ExtractGrammar(tn, *ExtractOptions) *GrammarModel` — introspect a live
+- `ExtractGrammar(tn, *ExtractOptions) *GrammarModel`. Introspect a live
   instance into the model. **The heart of the package.**
 - `ModelToSvg`, `ModelToAscii`, `RenderNodeSvg`, `RenderNodeAscii`,
-  `ToText` — renderers.
+  `ToText`: the renderers.
 - Node constructors: `Terminal`, `NonTerminal`, `Comment`, `SkipNode`,
   `Sequence`, `Choice`, `MustChoice`, `Optional`, `OneOrMore`,
   `ZeroOrMore`, `Diagram`.
-- `Plugin(tn, opts)` + `Of(tn)` — the plugin wiring and API accessor.
+- `Plugin(tn, opts)` + `Of(tn)`. The plugin wiring and API accessor.
 - Types: `RailroadNode`, `GrammarModel`, `LegendEntry`, `RailroadError`.
 
 ## Notes on the Go port
@@ -105,7 +105,7 @@ The TypeScript extractor reads the raw `#KEY` / `#VAL` token-set names off
 each alt to render readable set labels. The Go engine resolves those names
 to `[]Tin` sets on the live `RuleSpec`, so the Go extractor recovers the
 set name by matching the resolved tins to a named token set (disambiguating
-identical sets — e.g. `KEY` vs `VAL` — by position role: a slot followed by
+identical sets (for example `KEY` against `VAL`) by position role: a slot followed by
 a colon is a map key). Rule-map key order is not part of the cross-language
 contract; the Go model orders user rules deterministically (the engine's
 `RSM` is an unordered map).
@@ -117,7 +117,7 @@ The json grammar rendered to a vertical-flow diagram
 
 ![railroad diagram of the json grammar](../examples/json-grammar.svg)
 
-The same grammar as an ASCII diagram (excerpt — the `val` choice and the
+The same grammar as an ASCII diagram (excerpt: the `val` choice and the
 `pair` loop; full output in
 [`../examples/json-grammar.txt`](../examples/json-grammar.txt)):
 

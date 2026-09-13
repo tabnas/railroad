@@ -1,8 +1,8 @@
-# Concepts — how `tabnasrailroad` works and why (Go)
+# Concepts: how `tabnasrailroad` works and why (Go)
 
 This explains the design of the Go port: the relationship to the parsing
 engine, how a live grammar is reverse-mapped into a diagram model, why the
-layout is vertical, and — importantly — how the Go port differs from the
+layout is vertical, and (importantly) how the Go port differs from the
 canonical TypeScript implementation it tracks.
 
 For tasks, see [guide.md](guide.md) and [tutorial.md](tutorial.md); for the
@@ -26,13 +26,13 @@ Three stages, with a pure-data boundary between extraction and rendering:
 live *tabnas.Tabnas instance
         │   extract.go: ExtractGrammar(tn)
         ▼
-   *GrammarModel  (pure JSON — the interchange format)
+   *GrammarModel  (pure JSON, the interchange format)
         │   svg.go / ascii.go / model.go: ToText
         ▼
    SVG  /  ASCII  /  text
 ```
 
-The **`GrammarModel`** is the load-bearing seam: plain JSON-serializable
+The **`GrammarModel`** is the seam the rest hangs on: plain JSON-serializable
 data, a tagged union of nodes (`terminal`, `nonterminal`, `seq`, `choice`,
 `optional`, `oneOrMore`, `zeroOrMore`, `comment`, `skip`, `diagram`), one
 node tree per rule, plus the entry rule, a token legend, and the
@@ -57,7 +57,7 @@ those alts back into railroad constructs:
   push (`P`) appends the pushed rule as a nonterminal. A pure peek
   (`b == sN`) renders only the reference. Several open alts become a
   **choice**.
-- **Close alt.** `R == <self>` (plus a guard token) is a **repetition** —
+- **Close alt.** `R == <self>` (plus a guard token) is a **repetition**:
   `OneOrMore` with the guard token on the return rail (where json's `,`
   separator comes from). `R == <other>` is a continuation. A token-consuming
   close with no backup and no `R` is the rule's own **closing terminal**
@@ -90,7 +90,7 @@ source) and records a **legend** entry for non-punctuation labels. A token's
 meaning is resolved in priority order: a grammar-supplied description
 (`TokenDesc`), then the built-in `canon` table of standard token names, then
 an engine-derived meaning. The lexer's **IGNORE set** (whitespace, newlines,
-comments — `SP`, `LN`, `CM` for json) never appears in a rule and is
+comments: `SP`, `LN`, `CM` for json) never appears in a rule and is
 reported separately as `Ignored`.
 
 ## Why vertical flow
@@ -136,7 +136,7 @@ Concrete differences:
 - **`SkipNode`, not `Skip`.** Renamed to avoid clashing with the `KindSkip`
   constant.
 - **Explicit `rep` argument.** TS `OneOrMore(item, rep?)` makes `rep`
-  optional; Go `OneOrMore(item, rep)` always takes it — pass `nil` for none.
+  optional; Go `OneOrMore(item, rep)` always takes it; pass `nil` for none.
 - **Decoration, not a callable.** TS decorates the instance with a callable
   `tn.railroad`. Go has no callable values with attached methods, so the
   plugin stores a `*RailroadApi` under `DecorationName` (`"railroad"`),
@@ -144,7 +144,7 @@ Concrete differences:
   not loaded.
 - **`ToAscii` takes a required `AsciiOptions`.** TS's `toAscii(opts?)` is
   fully optional; the Go method signature is
-  `ToAscii(asciiOpts AsciiOptions, opts ...*ExtractOptions)` — pass
+  `ToAscii(asciiOpts AsciiOptions, opts ...*ExtractOptions)`; pass
   `AsciiOptions{}` for the default.
 - **Options struct shapes.** `ExtractOptions.NoFactor` is the inverse of TS's
   `factor` (default behaviour is identical: factoring on). `AsciiOptions.Plain`
@@ -154,14 +154,14 @@ Concrete differences:
   a `RuleOrder` slice and the custom `MarshalJSON` emits rules in that order.
   TS relies on JS object insertion order instead. Extraction fills the slice
   from the engine's `(*Tabnas).RuleNames()`, so both runtimes end up in the
-  grammar's declaration order — see the repo `AGENTS.md` §"Rule order" for
+  grammar's declaration order; see the repo `AGENTS.md` §"Rule order" for
   the one caveat (a `GrammarSpec` that declares no `RuleOrder`).
 - **Token-set name recovery.** The TS extractor reads the raw `#KEY` / `#VAL`
   token-set name strings straight off each alt. The Go engine does not retain
-  those strings on the live `RuleSpec` — it resolves them to `[]Tin` sets — so
+  those strings on the live `RuleSpec` (it resolves them to `[]Tin` sets) so
   the Go extractor recovers a readable set name by matching the resolved tin
   set against the instance's named token sets, disambiguating identical sets
-  (e.g. `KEY` vs `VAL`) by **position role**: a slot immediately followed by a
+  (for example `KEY` vs `VAL`) by **position role**: a slot immediately followed by a
   colon is a map key. The candidate names and their order come from
   `ExtractOptions.TokenSetNames` (default `["VAL", "KEY"]`); per-token human
   descriptions come from `ExtractOptions.TokenDesc` (the analog of the TS
@@ -173,12 +173,12 @@ Concrete differences:
 
 ## Design trade-offs
 
-- **Pure-data model over a clever renderer** — buys reproducibility, a stable
+- **Pure-data model over a clever renderer**. Buys reproducibility, a stable
   interchange format, a trivial CLI render mode, and the cross-language
   parity above.
-- **Heuristic reverse-mapping, not a formal inverse** — the alt machine is
+- **Heuristic reverse-mapping, not a formal inverse**. The alt machine is
   lower-level than EBNF, so the mapping is documented heuristics tuned and
   tested against `@tabnas/json`. It aims for a *readable* diagram.
-- **Verticality over density** — tall-and-narrow trades compactness for
+- **Verticality over density**. Tall-and-narrow trades compactness for
   small-screen readability.
-- **Engine scope** — only `tabnas` parser instances are introspected.
+- **Engine scope**. Only `tabnas` parser instances are introspected.
