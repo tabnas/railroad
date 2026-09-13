@@ -1,4 +1,4 @@
-# Reference — `@tabnas/railroad`
+# Reference: `@tabnas/railroad`
 
 The complete public surface: the plugin member, the bare exports, the
 option and model types, and the `tabnas-railroad` CLI. Dry and complete.
@@ -26,7 +26,7 @@ is **lazy**: each helper re-reads the instance's current grammar on call,
 so install order relative to a grammar plugin does not matter. Child
 instances created with `tn.make()` inherit the decoration.
 
-### `tn.railroad` — the `RailroadApi`
+### `tn.railroad`: the `RailroadApi`
 
 `tn.railroad` is **callable** and also carries helpers and constructors.
 
@@ -157,7 +157,7 @@ type RailroadNode =
   | { kind: 'diagram'; items: RailroadNode[] }
 ```
 
-`Item = RailroadNode | string` — a bare string is coerced to a `Terminal`
+`Item = RailroadNode | string`, so a bare string is coerced to a `Terminal`
 by the constructors and renderers.
 
 ### `GrammarModel`
@@ -173,7 +173,7 @@ type GrammarModel = {
 ```
 
 Pure JSON-serializable data. `legend` / `ignored` are present only when
-non-empty. The model is the interchange format — SVG/ASCII are reproducible
+non-empty. The model is the interchange format: SVG and ASCII are reproducible
 from it alone.
 
 ### `ExtractOptions`
@@ -214,9 +214,9 @@ class RailroadError extends Error {
 ```
 
 Thrown for a malformed model: a `Choice` with no branches, an invalid node
-value (e.g. `Sequence(null)`), or rendering an unknown `kind`.
+value (for example `Sequence(null)`), or rendering an unknown `kind`.
 
-## CLI — `tabnas-railroad`
+## CLI: `tabnas-railroad`
 
 ```
 tabnas-railroad --grammar <module>[#export] [-o <dir>] [formats]
@@ -233,7 +233,7 @@ echo '<model.json>' | tabnas-railroad - [format]
 | `-` | | Read a `GrammarModel` JSON from stdin. |
 
 In grammar mode the plugin export is chosen as: the named `#export`, else
-the export matching the bare module name (e.g. `json` for `@tabnas/json`),
+the export matching the bare module name (for example `json` for `@tabnas/json`),
 else a default/function export, else the first function export.
 
 ### Output

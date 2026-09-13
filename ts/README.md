@@ -37,18 +37,18 @@ Object.keys(model.rules).length          // => 5
 tn.railroad.toSvg().startsWith('<svg')   // => true
 ```
 
-- `tn.railroad()` / `tn.railroad.toJson()` — the `GrammarModel` for this instance.
-- `tn.railroad.toSvg(opts?)` — whole-grammar SVG.
-- `tn.railroad.toAscii(opts?)` — whole-grammar ASCII (`{ ascii: true }` for plain `| - +`).
+- `tn.railroad()` / `tn.railroad.toJson()`. The `GrammarModel` for this instance.
+- `tn.railroad.toSvg(opts?)`. Whole-grammar SVG.
+- `tn.railroad.toAscii(opts?)`. Whole-grammar ASCII (`{ ascii: true }` for plain `| - +`).
 
 ## Documentation
 
 Four-quadrant [Diátaxis](https://diataxis.fr/) docs:
 
-- [doc/tutorial.md](doc/tutorial.md) — zero to a rendered diagram, step by step.
-- [doc/guide.md](doc/guide.md) — focused how-to recipes.
-- [doc/reference.md](doc/reference.md) — the exact API surface and CLI flags.
-- [doc/concepts.md](doc/concepts.md) — how introspection and vertical-flow layout work.
+- [doc/tutorial.md](doc/tutorial.md). Zero to a rendered diagram, step by step.
+- [doc/guide.md](doc/guide.md). Focused how-to recipes.
+- [doc/reference.md](doc/reference.md). The exact API surface and CLI flags.
+- [doc/concepts.md](doc/concepts.md). How introspection and vertical-flow layout work.
 
 The Go port lives in [`../go`](../go) (see [`../go/README.md`](../go/README.md)).
 
@@ -59,7 +59,7 @@ The Go port lives in [`../go`](../go) (see [`../go/README.md`](../go/README.md))
 
 ![railroad diagram of the @tabnas/json grammar](../examples/json-grammar.svg)
 
-The same grammar as an ASCII diagram (excerpt — `val`, `map`, `pair`; full
+The same grammar as an ASCII diagram (excerpt: `val`, `map`, `pair`; full
 output in [`../examples/json-grammar.txt`](../examples/json-grammar.txt)):
 
 ```text
@@ -113,7 +113,7 @@ pair:
 { start: string, rules: { [name]: Node }, meta: { engine: 'tabnas' } }
 ```
 
-`Node` is a small tagged union — `terminal` / `nonterminal` / `comment` /
+`Node` is a small tagged union: `terminal` / `nonterminal` / `comment` /
 `skip` / `seq` / `choice` / `optional` / `oneOrMore` / `zeroOrMore`. It is pure
 data, so the SVG and ASCII are fully reproducible from the JSON alone. The
 constructors and a text form are exported for direct use:

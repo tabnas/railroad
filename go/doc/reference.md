@@ -1,4 +1,4 @@
-# Reference — `tabnasrailroad` (Go)
+# Reference: `tabnasrailroad` (Go)
 
 The complete public surface of the Go port: the plugin and API, the
 package-level functions, the option and model types, and the
@@ -18,7 +18,7 @@ enforces that), so read it there rather than quoting a literal here.
 ### `Plugin(tn *tabnas.Tabnas, opts map[string]any) error`
 
 The tabnas plugin entry point. Decorates `tn` under the key
-`DecorationName` (`"railroad"`) with a `*RailroadApi`. Decoration is lazy —
+`DecorationName` (`"railroad"`) with a `*RailroadApi`. Decoration is lazy:
 each helper re-reads the instance's current grammar on call, so install
 order does not matter. Derived instances (`tn.Derive()`) inherit it.
 
@@ -104,7 +104,7 @@ t, _ := tabnasrailroad.ToText(tabnasrailroad.Sequence(
 
 ## Node constructors
 
-Each returns a `*RailroadNode`. Go terminals are always explicit — there is
+Each returns a `*RailroadNode`. Go terminals are always explicit; there is
 no bare-string coercion (the TS `Item = RailroadNode | string` collapses to
 `*RailroadNode` here).
 
@@ -125,7 +125,7 @@ no bare-string coercion (the TS `Item = RailroadNode | string` collapses to
 `SkipNode` is named differently from TS's `Skip` to avoid clashing with the
 `KindSkip` constant. `Choice`/`MustChoice` replace TS's single throwing
 `Choice`. `OneOrMore`/`ZeroOrMore` take an explicit `rep` argument (TS makes
-it optional) — pass `nil` for no return-rail node.
+it optional); pass `nil` for no return-rail node.
 
 ## Types
 
@@ -202,7 +202,7 @@ type ExtractOptions struct {
 
 `NoFactor` is the inverse of the TS `factor` flag. `TokenSetNames` and
 `TokenDesc` are Go-specific extraction inputs (see [concepts.md](concepts.md)
-— the Go engine resolves token-set names differently from TS).
+because the Go engine resolves token-set names differently from TS).
 
 ### `SvgOptions`
 
@@ -236,7 +236,7 @@ Returned (or panicked, via `MustChoice`) for a malformed model: a `Choice`
 with no branches, an invalid (nil) node, or an unknown `Kind`. Use
 `errors.As(err, &re)` with `var re *tabnasrailroad.RailroadError`.
 
-## CLI — `cmd/tabnas-railroad`
+## CLI: `cmd/tabnas-railroad`
 
 ```
 tabnas-railroad --grammar <module> [-o <dir>] [formats]

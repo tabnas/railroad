@@ -1,4 +1,4 @@
-# Tutorial — your first railroad diagram
+# Tutorial: your first railroad diagram
 
 This walks you from nothing to a rendered syntax (railroad) diagram of a
 real grammar. One happy path, every step verified. By the end you will have
@@ -16,12 +16,12 @@ npm install @tabnas/parser @tabnas/railroad @tabnas/json
 
 - `@tabnas/parser` is the parsing engine (a peer dependency).
 - `@tabnas/railroad` is this package.
-- `@tabnas/json` is a grammar to draw — any tabnas grammar plugin works.
+- `@tabnas/json` is a grammar to draw. Any tabnas grammar plugin works.
 
 ## 2. Build an instance with a grammar and the plugin
 
 Load a grammar plugin (`json`) and `railroad` onto a fresh `Tabnas`. Order
-does not matter — `railroad` re-reads the grammar each time you call it.
+does not matter: `railroad` re-reads the grammar each time you call it.
 
 ```js
 const { Tabnas } = require('@tabnas/parser')
@@ -60,7 +60,7 @@ node per rule), and `meta`. The five json rules are `val`, `map`, `list`,
 
 ## 4. Render an ASCII diagram
 
-`tn.railroad.toAscii()` returns a vertical-flow ASCII diagram — one block
+`tn.railroad.toAscii()` returns a vertical-flow ASCII diagram, one block
 per rule. It is the quickest way to *see* the grammar in a terminal.
 
 ```js
@@ -88,8 +88,8 @@ val:
               │
 ```
 
-Square-cornered boxes are **nonterminals** (rule references — `map`,
-`list`); round-cornered quoted boxes are **terminals** (tokens — `"VAL"`).
+Square-cornered boxes are **nonterminals** (rule references: `map`,
+`list`); round-cornered quoted boxes are **terminals** (tokens: `"VAL"`).
 A json value is a map, a list, or a value token.
 
 The `pair` rule shows a repetition: a `KEY : val` group that loops back on
@@ -164,8 +164,8 @@ artifacts. You now have the same model, SVG, and ASCII you produced in code.
 
 ## Where to go next
 
-- [guide.md](guide.md) — focused recipes (save artifacts, plain ASCII,
+- [guide.md](guide.md). Focused recipes (save artifacts, plain ASCII,
   hand-built diagrams, the CLI render mode).
-- [reference.md](reference.md) — every export, option, and CLI flag.
-- [concepts.md](concepts.md) — how grammar introspection and the
+- [reference.md](reference.md). Every export, option, and CLI flag.
+- [concepts.md](concepts.md). How grammar introspection and the
   vertical-flow layout actually work.

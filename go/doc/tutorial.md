@@ -1,4 +1,4 @@
-# Tutorial — your first railroad diagram (Go)
+# Tutorial: your first railroad diagram (Go)
 
 This walks you from nothing to a rendered syntax (railroad) diagram of a
 real grammar, using the Go port `tabnasrailroad`. One happy path, every step
@@ -50,7 +50,7 @@ func main() {
 
 `Plugin` decorates the instance under the key `tabnasrailroad.DecorationName`;
 `Of(tn)` returns the installed `*RailroadApi`. (`Of` also works without
-`Plugin` — it binds a fresh API to the instance — so the plugin call is
+`Plugin` (it binds a fresh API to the instance) so the plugin call is
 optional when you only use `Of`.)
 
 ## 3. Read the grammar back out as a model
@@ -73,7 +73,7 @@ node per rule), and `Meta`. The five json rules are `val`, `map`, `list`,
 
 ## 4. Render an ASCII diagram
 
-`api.ToAscii` returns a vertical-flow ASCII diagram — one block per rule. It
+`api.ToAscii` returns a vertical-flow ASCII diagram, one block per rule. It
 takes an `AsciiOptions` (use the zero value for Unicode box-drawing).
 
 ```go
@@ -94,11 +94,11 @@ val:
               │
 ```
 
-Square-cornered boxes are **nonterminals** (rule references — `map`,
-`list`); round-cornered quoted boxes are **terminals** (tokens — `"VAL"`).
+Square-cornered boxes are **nonterminals** (rule references: `map`,
+`list`); round-cornered quoted boxes are **terminals** (tokens: `"VAL"`).
 A json value is a map, a list, or a value token.
 
-For terminals that mangle box-drawing characters, ask for plain mode — pure
+For terminals that mangle box-drawing characters, ask for plain mode: pure
 7-bit ASCII using `| - +`:
 
 ```go
@@ -141,7 +141,7 @@ fixed set of built-in grammar names; `json` is built in.)
 
 ## Where to go next
 
-- [guide.md](guide.md) — focused recipes.
-- [reference.md](reference.md) — every export, option, and CLI flag.
-- [concepts.md](concepts.md) — how introspection and vertical-flow layout
+- [guide.md](guide.md). Focused recipes.
+- [reference.md](reference.md). Every export, option, and CLI flag.
+- [concepts.md](concepts.md). How introspection and vertical-flow layout
   work, plus the differences from the TS version.

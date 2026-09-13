@@ -1,8 +1,8 @@
-# Concepts — how `@tabnas/railroad` works and why
+# Concepts: how `@tabnas/railroad` works and why
 
 This explains the design: the relationship to the parsing engine, how a
 live grammar is reverse-mapped into a diagram model, and why the layout is
-biased toward verticality. It is background, not a task list — for those see
+biased toward verticality. It is background, not a task list; for those see
 [guide.md](guide.md) and [tutorial.md](tutorial.md).
 
 ## A renderer, not a parser
@@ -16,7 +16,7 @@ This is the inverse of the usual dependency direction. A grammar package
 (like `@tabnas/json`) is a runtime thing; `railroad` is a `file:` dev
 dependency those packages use to regenerate the diagrams in their READMEs.
 It plays the same role for grammars that `@tabnas/debug` plays for
-introspection — a tool, not a grammar.
+introspection: a tool, not a grammar.
 
 ## The pipeline: instance → model → render
 
@@ -27,14 +27,14 @@ between them:
 live Tabnas instance
         │   extract.ts: extractGrammar(tn)
         ▼
-   GrammarModel  (pure JSON — the interchange format)
+   GrammarModel  (pure JSON, the interchange format)
         │   svg.ts / ascii.ts / model.ts:toText
         ▼
    SVG  /  ASCII  /  text
 ```
 
-The **`GrammarModel`** is the load-bearing seam. It is plain
-JSON-serializable data — a tagged union of nodes (`terminal`,
+The **`GrammarModel`** is the seam the rest hangs on. It is plain
+JSON-serializable data: a tagged union of nodes (`terminal`,
 `nonterminal`, `seq`, `choice`, `optional`, `oneOrMore`, `zeroOrMore`,
 `comment`, `skip`, `diagram`), one node tree per rule, plus the entry rule,
 a token legend, and the ignored-token set.
@@ -43,7 +43,7 @@ Because the renderers read **only** the model and never the live instance,
 the SVG and ASCII are fully reproducible from the JSON alone. The test suite
 asserts that a model round-tripped through `JSON.stringify` yields
 byte-identical SVG and ASCII. This is a deliberate invariant: you can
-extract once, store the JSON, and render any time later — the CLI's render
+extract once, store the JSON, and render any time later; the CLI's render
 mode (`-f model.json`) is exactly this.
 
 ## Grammar introspection: reversing the rule machine
@@ -61,14 +61,14 @@ ends, loops, or hands control back). `extractGrammar` reads the rule set
   a `p:` push appends the pushed rule as a nonterminal. A pure peek
   (`b == sN`, consuming nothing) renders only the reference. Several open
   alts become a **choice**.
-- **Close alt.** `r: <self>` (plus a guard token) is a **repetition** —
+- **Close alt.** `r: <self>` (plus a guard token) is a **repetition**:
   `OneOrMore` with the guard token on the return rail (that is where json's
   `,` separator comes from). `r: <other>` is a **continuation** appended in
   sequence. A close alt that consumes a token with no backup and no `r` is
   the rule's own **closing terminal** (json's `}` / `]`). A backup close
   (`b > 0`) leaves the token for the parent and is **dropped**; an
   end-of-source or pure pop is also dropped.
-- **Synthetic helper rules** — names containing `$` or matching `_gen\d` —
+- **Synthetic helper rules**. Names containing `$` or matching `_gen\d`
   are **inlined** at their reference site rather than emitted as their own
   rule. The `__start__` wrapper is unwrapped to the real entry rule.
 
@@ -82,7 +82,7 @@ pair = "KEY" ":" val+ /* "," */
 elem = val+ /* "," */
 ```
 
-— which is recognizable as JSON even though none of that structure was
+This is recognizable as JSON even though none of that structure was
 stored that way. The extractor is deliberately **loose** about the
 introspection object: it reads `tn` through the documented `rule()` /
 `internal().config` shape and never hard-depends on deeper internals, so an
@@ -109,24 +109,24 @@ which sits closer to the engine's alt structure.
 Diagram boxes show **labels**, but the engine works in numeric token ids
 (`tin`s). The extractor resolves each id to the most readable label it can:
 a reverse-resolved fixed literal (`{`, `:`, `}`), a named token-set name
-(`KEY`, `VAL`), or a regex source — and records a **legend** entry for
+(`KEY`, `VAL`), or a regex source, and records a **legend** entry for
 labels that are not self-explanatory punctuation.
 
 A token's *meaning* is resolved in priority order:
 
-1. a **grammar-supplied description** — a plugin can attach `cfg.tokenDesc`
+1. a **grammar-supplied description**: a plugin can attach `cfg.tokenDesc`
    via the engine's `config.modify` hook, and railroad reads it straight
    off the live config;
 2. the built-in **`CANON`** table of standard tabnas/jsonic token names
-   (`OB`, `CL`, `NR`, `ST`, ...);
-3. an **engine-derived** meaning — a regex source, a reverse-resolved fixed
+   (`OB`, `CL`, `NR`, `ST` and the rest);
+3. an **engine-derived** meaning: a regex source, a reverse-resolved fixed
    literal, or the token set the id belongs to.
 
 If you add tokens to a grammar and want good legends, attach `tokenDesc`
 entries rather than editing this package.
 
-Separately, the lexer's **IGNORE set** (whitespace, newlines, comments —
-tokens silently skipped between meaningful tokens) never appears in any
+Separately, the lexer's **IGNORE set** (whitespace, newlines, comments,
+which are silently skipped between meaningful tokens) never appears in any
 rule, so it cannot be drawn. The extractor reports it on its own as
 `model.ignored`, rendered as an "Ignored tokens" key. For `@tabnas/json`
 that is `SP`, `LN`, `CM`.
@@ -136,7 +136,7 @@ diagram, so it never lists tokens you cannot see.
 
 ## Why vertical flow
 
-Most railroad-diagram tools lay grammars out **horizontally** — flow runs
+Most railroad-diagram tools lay grammars out **horizontally**: flow runs
 left to right, and a rule with several alternatives becomes very wide. That
 is fine on a wide desktop monitor but scrolls badly on a laptop and is
 nearly unusable on a phone.
@@ -144,7 +144,7 @@ nearly unusable on a phone.
 `railroad` biases the other way: flow runs **top to bottom**. Sequences
 stack vertically, choice branches fan out sideways (but a choice is usually
 shallow), and optional / repetition rails run parallel on the side. The
-output is **tall and narrow** — it fits a phone or a documentation column
+output is **tall and narrow**: it fits a phone or a documentation column
 and scrolls naturally. The SVG document is asserted to be taller than wide.
 
 Both renderers share this flow model. Each node measures to a small layout
@@ -152,7 +152,7 @@ record (width, height, entry/exit rail position) and draws itself at a given
 origin; parents stack and connect children's rails. The SVG renderer paints
 onto a coordinate plane; the ASCII renderer paints onto a character grid,
 tracking rail direction bits per cell so junctions resolve to the right
-box-drawing glyph (`├`, `┬`, `┼`, ...) automatically — or to `| - +` in
+box-drawing glyph (`├`, `┬`, `┼` and the rest) automatically, or to `| - +` in
 plain mode.
 
 ## Whole-grammar assembly
@@ -176,7 +176,7 @@ and "Ignored tokens" keys at the end.
   tuned and tested against real grammars (`@tabnas/json`). It aims for a
   *readable* diagram, not a provably exact inverse of the compiler.
 - **Verticality over density.** Tall-and-narrow trades some compactness for
-  readability on small screens — the stated goal.
+  readability on small screens, the stated goal.
 - **Engine scope.** Only `@tabnas/parser` instances are introspected; the
   older `@tabnas/jsonic` grammars (`ini`, `yaml`) are out of scope until a
   jsonic adapter exists.

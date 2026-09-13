@@ -1,4 +1,4 @@
-# How-to guide — railroad recipes (Go)
+# How-to guide: railroad recipes (Go)
 
 Focused recipes for the Go port `tabnasrailroad`. Each is self-contained.
 For the full API see [reference.md](reference.md); for the why see
@@ -32,7 +32,7 @@ ascii, _ := tabnasrailroad.Of(tn).ToAscii(tabnasrailroad.AsciiOptions{})
 fmt.Println(ascii)
 ```
 
-Install order is irrelevant — the helpers re-introspect the live grammar on
+Install order is irrelevant: the helpers re-introspect the live grammar on
 each call.
 
 ## Save the three artifacts to disk
@@ -161,7 +161,7 @@ _ = mustC
 
 ## Read the token legend
 
-Token labels that are not self-explanatory punctuation (e.g. `KEY` / `VAL`)
+Token labels that are not self-explanatory punctuation (for example `KEY` / `VAL`)
 get a `Legend` entry; tokens the lexer silently skips (whitespace, comments)
 are reported in `Ignored`. Both are also rendered into the SVG and ASCII as
 "Tokens" / "Ignored tokens" keys.
