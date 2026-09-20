@@ -187,8 +187,7 @@ fn empty_choice_is_rejected_on_decode() {
         Some(serde_json::json!({"kind":"choice","items":[]}))
     );
 
-    let nested =
-        r#"{"kind":"seq","items":["a",{"kind":"optional","item":{"kind":"choice","items":[]}}]}"#;
+    let nested = r#"{"kind":"seq","items":[{"kind":"terminal","text":"a"},{"kind":"optional","item":{"kind":"choice","items":[]}}]}"#;
     let error = RailroadNode::from_json(nested).unwrap_err();
     assert_eq!(
         error.to_string(),
