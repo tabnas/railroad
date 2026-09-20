@@ -1,0 +1,59 @@
+# The Rust port of @tabnas/railroad. ts/ is canonical; go/ and this crate
+# track it. `version` MUST equal ts/package.json "version" and `VERSION`
+# in src/lib.rs: tests/version_test.rs fails the build when they drift.
+
+[package]
+name = "tabnas-railroad"
+version = "0.3.6"
+edition = "2021"
+rust-version = "1.85"
+license = "MIT"
+description = "Railroad (syntax) diagram renderer for the tabnas parser: introspects a live grammar and emits a JSON model, a vertical-flow SVG and an ASCII diagram."
+repository = "https://github.com/tabnas/railroad"
+readme = "README.md"
+keywords = ["tabnas", "railroad", "syntax", "diagram", "grammar"]
+categories = ["parsing", "development-tools", "visualization"]
+
+[lib]
+name = "tabnas_railroad"
+path = "src/lib.rs"
+
+# The `tabnas-railroad` command. The library is the crate; the binary is
+# the port of go/cmd/tabnas-railroad and needs the json grammar for its
+# grammar mode (Go has no dynamic require either, so it resolves a fixed
+# table of built-in grammars). Both sit behind the `cli` feature, on by
+# default; a library consumer that wants neither takes the crate with
+# `default-features = false`.
+[[bin]]
+name = "tabnas-railroad"
+path = "src/bin/tabnas-railroad.rs"
+required-features = ["cli"]
+
+[features]
+default = ["cli"]
+cli = ["dep:tabnas-json"]
+
+[dependencies]
+# The engine is consumed as a SIBLING CHECKOUT, the standard tabnas
+# development model: clone https://github.com/tabnas/parser next to this
+# repo. The `tabnas` crate is not published, so there is no registry
+# version to fall back on.
+tabnas = { path = "../../parser/rs" }
+# The json grammar is the CLI's built-in grammar (see `[features]`) and,
+# below, the test grammar. It is a sibling checkout too.
+tabnas-json = { path = "../../json/rs", optional = true }
+indexmap = { version = "2.2", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0", features = ["preserve_order"] }
+
+[dev-dependencies]
+# The known-good fixture grammar the suite extracts and renders, the role
+# @tabnas/json plays as a dev-only devDependency of ts/.
+tabnas-json = { path = "../../json/rs" }
+# The shared fixture loader, escape codec, `ERROR:` contract and runner:
+# the Rust half of @tabnas/support, so the loaders cannot drift.
+tabnas-support = { path = "../../support/rs", features = ["serde_json"] }
+# Tests only: the layout assertions ported from go/railroad_test.go read
+# coordinates back out of the SVG text. Same requirement as the engine's,
+# so cargo unifies them to one version.
+regex = "1.10"

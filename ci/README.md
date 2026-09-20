@@ -11,6 +11,14 @@ This directory exists because session credentials cannot write
 
 ## Pending
 
+- **`workflows/rust.yml`** — the Rust gate, staged the same way. It
+  checks this repository out beside fresh clones of `parser`, `json` and
+  `support` (the crate's three unpublished path dependencies), installs
+  the MSRV pinned in `rs/Cargo.toml`, and runs `rust/run.sh`: format
+  check, build, tests, doctests, clippy with warnings denied, and a
+  lockfile check that exempts only the siblings' own versions. The script
+  is the whole gate, so a local `ci/rust/run.sh` says what CI would.
+
 - **`workflows/docs.yml`** — the prose gate: Vale over the reader-facing
   pages at the levels set in `.vale.ini`, on the file list
   `ts/scripts/gated-docs.cjs` produces. See `docs/STYLE-GUIDE.md`.

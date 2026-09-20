@@ -21,12 +21,15 @@ This repository contains:
 |---|---|
 | [`ts/`](ts/) | TypeScript / JavaScript implementation (`@tabnas/railroad`), plus the `tabnas-railroad` CLI. **Canonical.** |
 | [`go/`](go/) | Go port (`package tabnasrailroad`), plus the `cmd/tabnas-railroad` CLI. Tracks `ts/`. |
+| [`rs/`](rs/) | Rust port (crate `tabnas-railroad`), plus the `tabnas-railroad` binary. Tracks `ts/`. |
 
-See [`ts/README.md`](ts/README.md) and [`go/README.md`](go/README.md) for usage.
+See [`ts/README.md`](ts/README.md), [`go/README.md`](go/README.md) and
+[`rs/README.md`](rs/README.md) for usage.
 
 ## Documentation
 
-Four-quadrant [Diátaxis](https://diataxis.fr/) docs, per language:
+Four-quadrant [Diátaxis](https://diataxis.fr/) docs, per language (the
+Rust crate documents itself in [`rs/README.md`](rs/README.md)):
 
 | | TypeScript (canonical) | Go (port) |
 |---|---|---|
