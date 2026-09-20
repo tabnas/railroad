@@ -56,14 +56,20 @@ fn spec() {
 }
 
 /// Every fixture file is run: a file that stopped being discovered would
-/// otherwise pass silently.
+/// otherwise pass silently. The check is that the baseline files are
+/// present, not that they are the only ones, so a fixture added to the
+/// shared directory is picked up here without touching this runner.
 #[test]
 fn every_fixture_is_discovered() {
     let dir = find_spec_dir(Some(Path::new(env!("CARGO_MANIFEST_DIR")))).expect("test/spec");
     let specs = load_spec_dir(&dir, &SpecOptions::default()).expect("the fixtures load");
-    let mut names: Vec<&str> = specs.iter().map(|spec| spec.file.as_str()).collect();
-    names.sort_unstable();
-    assert_eq!(names, ["node-ascii.tsv", "node-text.tsv"]);
+    let names: Vec<&str> = specs.iter().map(|spec| spec.file.as_str()).collect();
+    for required in ["node-ascii.tsv", "node-text.tsv"] {
+        assert!(
+            names.contains(&required),
+            "{required} is not discovered: {names:?}"
+        );
+    }
 }
 
 /// The first column is the node's own JSON shape, which is what both

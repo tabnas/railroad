@@ -146,6 +146,20 @@ fn invalid_model_json_fails() {
 }
 
 #[test]
+fn empty_choice_in_a_model_fails_instead_of_panicking() {
+    let model = r#"{"start":"a","rules":{"a":{"kind":"choice","items":[]}}}"#;
+    for format in ["--svg", "--ascii", "--text", "--json"] {
+        let (code, stdout, stderr) = run_cli(&["-", format], model);
+        assert_eq!(code, 1, "{format}");
+        assert!(stdout.is_empty(), "{format}");
+        assert!(
+            stderr.contains("choice needs at least one branch"),
+            "{format}: {stderr}"
+        );
+    }
+}
+
+#[test]
 fn unknown_grammar_fails() {
     let (code, _, stderr) = run_cli(&["--grammar", "yaml"], "");
     assert_eq!(code, 1);

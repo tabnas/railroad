@@ -173,10 +173,38 @@ impl RailroadNode {
     /// [`RailroadError`]: that is where this port rejects what the
     /// TypeScript `norm` rejects at render time.
     pub fn from_json(text: &str) -> Result<RailroadNode, RailroadError> {
-        serde_json::from_str(text).map_err(|error| RailroadError {
+        let node: RailroadNode = serde_json::from_str(text).map_err(|error| RailroadError {
             message: format!("railroad: invalid diagram node: {error}"),
             node: serde_json::from_str(text).ok(),
-        })
+        })?;
+        node.check()?;
+        Ok(node)
+    }
+
+    /// Every choice in this tree has at least one branch.
+    ///
+    /// The constructors enforce that and the renderers rely on it, but a
+    /// tree that arrives as JSON goes through serde, which cannot, so the
+    /// decoders check here. The error carries the offending choice.
+    pub(crate) fn check(&self) -> Result<(), RailroadError> {
+        if let RailroadNode::Choice { items } = self {
+            if items.is_empty() {
+                return Err(RailroadError {
+                    message: "railroad: choice needs at least one branch".to_string(),
+                    node: serde_json::to_value(self).ok(),
+                });
+            }
+        }
+        for child in self.items().unwrap_or(&[]) {
+            child.check()?;
+        }
+        if let Some(item) = self.item() {
+            item.check()?;
+        }
+        if let Some(rep) = self.rep() {
+            rep.check()?;
+        }
+        Ok(())
     }
 
     /// Encode this node as compact JSON.
@@ -234,10 +262,17 @@ pub struct GrammarModel {
 impl GrammarModel {
     /// Decode a model from its JSON text.
     pub fn from_json(text: &str) -> Result<GrammarModel, RailroadError> {
-        serde_json::from_str(text).map_err(|error| RailroadError {
+        let model: GrammarModel = serde_json::from_str(text).map_err(|error| RailroadError {
             message: format!("railroad: invalid grammar model: {error}"),
             node: None,
-        })
+        })?;
+        for (name, rule) in &model.rules {
+            rule.check().map_err(|error| RailroadError {
+                message: format!("{} (rule {name})", error.message),
+                node: error.node,
+            })?;
+        }
+        Ok(model)
     }
 
     /// Encode this model as JSON indented by two spaces, the form the

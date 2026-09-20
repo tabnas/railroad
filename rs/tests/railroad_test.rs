@@ -173,6 +173,40 @@ fn choice_with_no_branches_errors() {
 }
 
 #[test]
+fn empty_choice_is_rejected_on_decode() {
+    // The constructors refuse a choice with no branches; a tree that
+    // arrives as JSON must be refused too, at any depth, before a
+    // renderer indexes the first branch that is not there.
+    let error = RailroadNode::from_json(r#"{"kind":"choice","items":[]}"#).unwrap_err();
+    assert_eq!(
+        error.to_string(),
+        "railroad: choice needs at least one branch"
+    );
+    assert_eq!(
+        error.node,
+        Some(serde_json::json!({"kind":"choice","items":[]}))
+    );
+
+    let nested =
+        r#"{"kind":"seq","items":["a",{"kind":"optional","item":{"kind":"choice","items":[]}}]}"#;
+    let error = RailroadNode::from_json(nested).unwrap_err();
+    assert_eq!(
+        error.to_string(),
+        "railroad: choice needs at least one branch"
+    );
+
+    let rep = r#"{"kind":"oneOrMore","item":{"kind":"terminal","text":"a"},"rep":{"kind":"choice","items":[]}}"#;
+    assert!(RailroadNode::from_json(rep).is_err());
+
+    let model = r#"{"start":"a","rules":{"a":{"kind":"choice","items":[]}}}"#;
+    let error = GrammarModel::from_json(model).unwrap_err();
+    assert_eq!(
+        error.to_string(),
+        "railroad: choice needs at least one branch (rule a)"
+    );
+}
+
+#[test]
 fn unknown_node_kind_is_rejected_on_decode() {
     // TypeScript rejects `{ kind: 'bogus' }` when it reaches a renderer;
     // a typed node cannot hold an unknown kind, so this port rejects it
