@@ -145,8 +145,10 @@ how the crate reaches the engine and in what Rust can express:
   colon. This is the Go port's approach, and it renders the json grammar
   identically. One consequence: a position that names a single token
   whose one-member set exists (a bare `#ST` where `KEY` is `["#ST"]`)
-  renders as the set name, where TypeScript would show the token.
-  `ExtractOptions::token_set_names` narrows the candidates.
+  renders as the set name, where TypeScript would show the token, and
+  only when the set's name starts with an ASCII letter, the same gate
+  TypeScript puts on a raw set name. `ExtractOptions::token_set_names`
+  narrows the candidates.
 - **Token descriptions are an option, not a config hook.** TypeScript
   reads `cfg.tokenDesc`, which a grammar attaches through the engine's
   `config.modify` hook. This engine has no such bag, so descriptions are

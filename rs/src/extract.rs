@@ -30,6 +30,7 @@
 //! against the instance's named token sets, disambiguating identical
 //! sets (`KEY` against `VAL`) by position role.
 
+use std::cmp::Ordering;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use indexmap::IndexMap;
@@ -235,12 +236,13 @@ pub fn extract_grammar(parser: &Tabnas, opts: &ExtractOptions) -> GrammarModel {
     for node in rules.values() {
         collect_terminals(node, &mut used);
     }
-    let legend: Vec<LegendEntry> = ctx
+    let mut legend: Vec<LegendEntry> = ctx
         .legend
         .iter()
         .filter(|(label, _)| used.contains(*label))
         .map(|(token, meaning)| LegendEntry::new(token, meaning))
         .collect();
+    legend.sort_by(|a, b| locale_cmp(&a.token, &b.token));
 
     let ignored = build_ignored(&ctx);
 
@@ -276,8 +278,87 @@ fn build_ignored(ctx: &Ctx) -> Vec<LegendEntry> {
         }
         out.push(LegendEntry::new(name, token_meaning(tin, ctx)));
     }
-    out.sort_by(|a, b| a.token.cmp(&b.token));
+    out.sort_by(|a, b| locale_cmp(&a.token, &b.token));
     out
+}
+
+/// The order `String.prototype.localeCompare` gives two token labels,
+/// which is how TypeScript sorts the legend and the ignored set.
+///
+/// This is the root collation as far as a token label reaches: ASCII
+/// punctuation first, in the collation's own order, then digits, then
+/// letters compared without regard to case or Latin-1 accents, and any
+/// other character after those by code point. Labels equal so far are
+/// ordered by their accents, then with lowercase before uppercase. Byte
+/// order would put `TX` before `ops`; this puts `ops` first, as
+/// TypeScript does.
+pub(crate) fn locale_cmp(a: &str, b: &str) -> Ordering {
+    let primary = a
+        .chars()
+        .map(|ch| primary_weight(fold(ch).0))
+        .cmp(b.chars().map(|ch| primary_weight(fold(ch).0)));
+    if primary != Ordering::Equal {
+        return primary;
+    }
+    let secondary = a
+        .chars()
+        .map(|ch| fold(ch).1)
+        .cmp(b.chars().map(|ch| fold(ch).1));
+    if secondary != Ordering::Equal {
+        return secondary;
+    }
+    a.chars()
+        .map(char::is_uppercase)
+        .cmp(b.chars().map(char::is_uppercase))
+}
+
+/// ASCII punctuation and symbols in root collation order, all of them
+/// before every digit and letter.
+const PUNCTUATION_ORDER: &str = "_-,;:!?.'\"()[]{}@*/\\&#%`^+<=>|~$";
+
+/// Latin-1 letters with a diacritic, and the base letter each sorts
+/// with at the primary level.
+const LATIN1_ACCENTS: &[(&str, char)] = &[
+    (
+        "\u{c0}\u{c1}\u{c2}\u{c3}\u{c4}\u{c5}\u{e0}\u{e1}\u{e2}\u{e3}\u{e4}\u{e5}",
+        'a',
+    ),
+    ("\u{c7}\u{e7}", 'c'),
+    ("\u{c8}\u{c9}\u{ca}\u{cb}\u{e8}\u{e9}\u{ea}\u{eb}", 'e'),
+    ("\u{cc}\u{cd}\u{ce}\u{cf}\u{ec}\u{ed}\u{ee}\u{ef}", 'i'),
+    ("\u{d1}\u{f1}", 'n'),
+    (
+        "\u{d2}\u{d3}\u{d4}\u{d5}\u{d6}\u{d8}\u{f2}\u{f3}\u{f4}\u{f5}\u{f6}\u{f8}",
+        'o',
+    ),
+    ("\u{d9}\u{da}\u{db}\u{dc}\u{f9}\u{fa}\u{fb}\u{fc}", 'u'),
+    ("\u{dd}\u{fd}\u{ff}", 'y'),
+];
+
+/// The letter `ch` sorts with at the primary level, and whether `ch`
+/// carries a diacritic that base letter lacks.
+fn fold(ch: char) -> (char, bool) {
+    LATIN1_ACCENTS
+        .iter()
+        .find(|(accented, _)| accented.contains(ch))
+        .map_or((ch, false), |(_, base)| (*base, true))
+}
+
+fn primary_weight(ch: char) -> u32 {
+    if let Some(at) = PUNCTUATION_ORDER.find(ch) {
+        return 1 + at as u32;
+    }
+    if ch.is_ascii_digit() {
+        return 100 + (ch as u32 - '0' as u32);
+    }
+    if ch.is_ascii_alphabetic() {
+        return 200 + (ch.to_ascii_lowercase() as u32 - 'a' as u32);
+    }
+    if ch.is_whitespace() {
+        return 0;
+    }
+    let lowered = ch.to_lowercase().next().unwrap_or(ch);
+    1000 + lowered as u32
 }
 
 /// Every distinct terminal label used in a node tree.
@@ -614,11 +695,20 @@ fn regex_source(tin: Tin, ctx: &Ctx) -> Option<String> {
 /// match (`KEY` and `VAL` share members on a bare engine), `KEY` is
 /// preferred for a position immediately followed by a colon (a map-key
 /// position), else the first candidate in preference order.
+///
+/// A single token is rendered by its set's name only when that name
+/// starts with an ASCII letter. TypeScript renders a one-member set by
+/// name only through the raw `#name` spelling on the alt, and gates
+/// that on `/^#[A-Za-z]/`; a set of two or more members has no such
+/// gate there, and none here.
 fn match_token_set(tins: &[Tin], positions: &[Vec<Tin>], i: usize, ctx: &Ctx) -> Option<String> {
     let want: HashSet<Tin> = tins.iter().copied().collect();
     let matched: Vec<&String> = ctx
         .set_names
         .iter()
+        .filter(|name| {
+            want.len() > 1 || name.chars().next().is_some_and(|c| c.is_ascii_alphabetic())
+        })
         .filter(|name| {
             ctx.token_sets.get(*name).is_some_and(|members| {
                 members.len() == want.len() && members.iter().all(|m| want.contains(m))
@@ -837,4 +927,23 @@ fn strip_hash(s: &str) -> String {
 fn pretty_source(source: &str) -> String {
     let source = source.strip_prefix('^').unwrap_or(source);
     source.strip_suffix('$').unwrap_or(source).to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::locale_cmp;
+
+    /// The order `localeCompare` gives this sample under the root
+    /// locale, captured from Node.
+    #[test]
+    fn locale_cmp_matches_locale_compare() {
+        let want = [
+            "_x", "#12", "1a", "a", "A", "a1", "aa", "ab", "ab_", "ab-", "ab.", "ab1", "b", "B",
+            "e", "\u{e9}", "f", "k-e", "ke", "key", "KEY", "ops", "Ops", "OPS", "TX", "z", "Z",
+        ];
+        let mut got = want;
+        got.reverse();
+        got.sort_by(|a, b| locale_cmp(a, b));
+        assert_eq!(got, want);
+    }
 }

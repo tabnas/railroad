@@ -1,4 +1,4 @@
-# Agents Guide — rs/
+# Agents Guide: rs/
 
 The Rust port of the canonical TypeScript in [`../ts`](../ts). Read
 [`../AGENTS.md`](../AGENTS.md) first: it holds the cross-runtime rules
@@ -79,7 +79,10 @@ three places, each stronger than the last:
   one-member `KEY` render as `KEY`. Go does the same with a fixed
   `["VAL","KEY"]` list; the wider default here is closer to TypeScript,
   which renders any grammar-named set. `ExtractOptions::token_set_names`
-  narrows it.
+  narrows it. One gate is kept from TypeScript: a single token takes its
+  set's name only when that name starts with an ASCII letter, because
+  the TypeScript raw-name path is `/^#[A-Za-z]/`; a set of two or more
+  members is matched by name without that gate in both.
 - **A function-valued push renders as `/* dynamic */`.** That is the
   TypeScript behaviour (`refNode`); Go drops it. A function-valued `r`
   is treated as no `r` in both, and so here.
@@ -100,15 +103,42 @@ three places, each stronger than the last:
   differently in Go; this port matches TypeScript.
 - The ASCII choice midpoint is `div_ceil(2)`: `Math.round` rounds a half
   up, and for non-negative integers that is the ceiling.
-- Widths are `chars().count()`, as Go counts runes. JavaScript counts
-  UTF-16 units, so a label with an astral character would measure one
-  wider there. No fixture has one.
+- Widths are UTF-16 units (`encode_utf16().count()`), which is what
+  JavaScript's `String.length` measures, in the ASCII boxes, the rail
+  labels, the key padding and the SVG box widths. A character outside
+  the Basic Multilingual Plane is two cells wide in both runtimes; the
+  ASCII canvas writes it into one cell and marks the next as its trailing
+  half so the row renders to the same string. Go counts runes and is one
+  narrower there.
+- A row's trailing whitespace is trimmed with JavaScript's `\s` set
+  (`js_trim_end` in `ascii.rs`), not Rust's `White_Space`: the byte order
+  mark is trimmed and NEXT LINE is kept, as in TypeScript. Only a
+  repetition label can end a row, so that is the only place it shows.
+- A choice with no branches, which only a hand-built enum value can
+  hold, renders as a bypass in both renderers instead of panicking on
+  its first branch. TypeScript crashes on one (a `TypeError`, not a
+  `RailroadError`), so there is no canonical rendering to match; the
+  decoders and `choice()` still refuse it.
 - `svg::num` prints a whole number without a decimal point and anything
   else with Rust's shortest round-trip digits, which is what JavaScript
   prints for the values this layout produces (halves and quarters).
-- The legend is a `BTreeMap`, so it is sorted by byte order.
-  TypeScript sorts with `localeCompare`; for the ASCII token names both
-  give the same order.
+- The legend and the ignored set are sorted with `locale_cmp` in
+  `extract.rs`, an approximation of `localeCompare` under the root
+  locale: punctuation, then digits, then letters without regard to case
+  or Latin-1 accents, lowercase first on a tie. Byte order would put
+  `TX` before a set named `ops`; TypeScript puts `ops` first, and so
+  does this. A unit test in `extract.rs` holds the comparator to an
+  order captured from Node.
+- `RailroadNode::from_json` and `GrammarModel::from_json` decode with
+  serde_json's recursion limit of 128 levels, so a rule nested about 124
+  nodes deep (fewer where sequences add an array level) is refused with
+  `recursion limit exceeded` where `JSON.parse` would accept it. That is
+  the depth at which a hostile file would otherwise be a stack question,
+  and no extracted grammar comes near it.
+- The launcher passes the command an empty stdin when stdin is a
+  terminal, as the TypeScript `readStdin` returns nothing on a TTY, so an
+  empty `-f` file fails instead of waiting on the keyboard. Go reads the
+  terminal. `cli::run` itself reads whatever it is given.
 - `tin_name` treats the engine's `#UNKNOWN` answer as no name, so an
   unregistered tin falls through to `#<tin>` the way an absent
   `cfg.t` entry does in TypeScript.

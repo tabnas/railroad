@@ -156,6 +156,59 @@ fn token_desc_overrides_the_legend() {
     assert_eq!(ignored["SP"], "a space");
 }
 
+/// The legend and the ignored set are ordered as `localeCompare` orders
+/// them in TypeScript, where a lowercase set name sorts among the
+/// letters rather than after every uppercase name.
+#[test]
+fn legend_is_ordered_like_locale_compare() {
+    let mut parser = tabnas::Tabnas::new();
+    let spec = tabnas::GrammarSpec::from_value(serde_json::json!({
+        "v": 2,
+        "options": {
+            "fixed": { "token": { "#PL": "+", "#MI": "-" } },
+            "tokenSet": { "ops": ["#PL", "#MI"] },
+        },
+        "rule": { "a": { "open": [ { "s": "#ops #TX" } ] } },
+        "ruleOrder": ["a"],
+    }))
+    .expect("the grammar document is valid");
+    parser.grammar(&spec).expect("the grammar installs");
+    let model = extract_grammar(&parser, &ExtractOptions::with_start("a"));
+    let tokens: Vec<&str> = model.legend.iter().map(|e| e.token.as_str()).collect();
+    assert_eq!(tokens, ["ops", "TX"]);
+    assert_eq!(model.legend[0].meaning, "one of: PL, MI");
+    let ignored: Vec<&str> = model.ignored.iter().map(|e| e.token.as_str()).collect();
+    assert_eq!(ignored, ["CM", "LN", "SP"]);
+    let ascii = model_to_ascii(&model, &AsciiOptions::default());
+    assert!(ascii.contains("Tokens:\n  ops = one of: PL, MI\n  TX  = "));
+}
+
+/// A single token is rendered by its set's name only when that name
+/// starts with an ASCII letter, the gate TypeScript puts on a raw set
+/// name; a set of two or more members has no such gate in either.
+#[test]
+fn one_member_set_names_need_an_ascii_letter() {
+    let mut parser = tabnas::Tabnas::new();
+    let spec = tabnas::GrammarSpec::from_value(serde_json::json!({
+        "v": 2,
+        "options": {
+            "fixed": { "token": { "#PL": "+", "#MI": "-" } },
+            "tokenSet": { "\u{e9}": ["#PL"], "e": ["#MI"], "1x": ["#PL", "#MI"] },
+        },
+        "rule": { "a": { "open": [ { "s": "#\u{e9} #e #1x" } ] } },
+        "ruleOrder": ["a"],
+    }))
+    .expect("the grammar document is valid");
+    parser.grammar(&spec).expect("the grammar installs");
+    let model = extract_grammar(&parser, &ExtractOptions::with_start("a"));
+    assert_eq!(
+        tabnas_railroad::to_text(&model.rules["a"]),
+        r#""+" "e" "1x""#
+    );
+    let tokens: Vec<&str> = model.legend.iter().map(|e| e.token.as_str()).collect();
+    assert_eq!(tokens, ["1x", "e"]);
+}
+
 // ---- whole-grammar rendering ----------------------------------------
 
 #[test]

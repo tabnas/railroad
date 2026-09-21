@@ -157,6 +157,64 @@ fn ascii_plain_is_pure_ascii() {
     assert!(out.is_ascii(), "expected pure ASCII, got {out}");
 }
 
+/// A label outside the Basic Multilingual Plane is two UTF-16 units, and
+/// TypeScript measures labels in those, so it is two cells wide in the
+/// ASCII box and 16 SVG units wide. The expected strings are the
+/// TypeScript renderings.
+#[test]
+fn labels_measure_in_utf16_units() {
+    let node = terminal("\u{1F600}");
+    assert_eq!(
+        render_node_ascii(&node, &AsciiOptions::default()),
+        "    \u{2502}\n\u{256d}\u{2500}\u{2500}\u{2500}\u{2534}\u{2500}\u{2500}\u{256e}\n\u{2502} \"\u{1F600}\" \u{2502}\n\u{2570}\u{2500}\u{2500}\u{2500}\u{252c}\u{2500}\u{2500}\u{256f}\n    \u{2502}"
+    );
+    assert_eq!(
+        render_node_ascii(&node, &AsciiOptions::plain()),
+        "    |\n+---+--+\n| \"\u{1F600}\" |\n+---+--+\n    |"
+    );
+    // 2 units * 8 + 2 * 10 = 36 wide, plus the 16 padding on each side.
+    let svg = render_node_svg(&node, &SvgOptions::default());
+    assert_eq!(common::svg_attr(&svg, "width"), 68);
+    assert!(svg.contains(r#"width="36""#));
+}
+
+/// A row is trimmed of trailing whitespace as JavaScript's `\s` defines
+/// it: the byte order mark goes, NEXT LINE stays. Only a repetition
+/// label can end a row, so that is where it shows.
+#[test]
+fn rows_trim_trailing_whitespace_as_javascript_does() {
+    let with = |label: &str| {
+        render_node_ascii(
+            &one_or_more(terminal("a"), Some(non_terminal(label))),
+            &AsciiOptions::default(),
+        )
+    };
+    assert!(with("b\u{85}").contains("\u{2502}\u{2502}b\u{85}\n"));
+    let bom = with("b\u{feff}");
+    assert!(bom.contains("\u{2502}\u{2502}b\n") && !bom.contains('\u{feff}'));
+    let nbsp = with("b\u{a0}");
+    assert!(nbsp.contains("\u{2502}\u{2502}b\n") && !nbsp.contains('\u{a0}'));
+}
+
+/// The enum can be built with a choice of no branches, which no
+/// constructor and no decoder allows. The renderers treat it as a bypass
+/// instead of indexing the branch that is not there.
+#[test]
+fn an_empty_choice_renders_as_a_bypass() {
+    let empty = RailroadNode::Choice { items: Vec::new() };
+    assert_eq!(
+        render_node_ascii(&empty, &AsciiOptions::default()),
+        render_node_ascii(&skip(), &AsciiOptions::default())
+    );
+    assert_eq!(
+        render_node_svg(&empty, &SvgOptions::default()),
+        render_node_svg(&skip(), &SvgOptions::default())
+    );
+    assert_eq!(to_text(&empty), "()");
+    let nested = sequence([terminal("a"), optional(empty), terminal("b")]);
+    assert!(render_node_ascii(&nested, &AsciiOptions::plain()).contains("\"b\""));
+}
+
 // ---- errors ---------------------------------------------------------
 
 #[test]

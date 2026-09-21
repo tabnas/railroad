@@ -103,12 +103,22 @@ fn glyphs(plain: bool) -> Glyphs {
     }
 }
 
+/// A literal cell: a character, or the trailing half of a character
+/// that JavaScript counts as two UTF-16 units. The character is printed
+/// by the cell before it; the trailing half prints nothing, so the row
+/// renders to the same string the two-cell JavaScript canvas gives.
+#[derive(Clone, Copy)]
+enum Lit {
+    Char(char),
+    Trail,
+}
+
 /// The character grid: per-cell direction bits resolve to junction
 /// glyphs, and a literal cell overrides them.
 #[derive(Default)]
 struct Canvas {
     bits: Vec<Vec<u8>>,
-    lit: Vec<Vec<Option<char>>>,
+    lit: Vec<Vec<Option<Lit>>>,
 }
 
 impl Canvas {
@@ -132,12 +142,22 @@ impl Canvas {
 
     fn put(&mut self, r: usize, c: usize, ch: char) {
         self.grow(r, c);
-        self.lit[r][c] = Some(ch);
+        self.lit[r][c] = Some(Lit::Char(ch));
     }
 
+    /// Write `s` from column `c`, one cell per UTF-16 unit: a character
+    /// outside the Basic Multilingual Plane takes two cells, as it does
+    /// in TypeScript, so every width and rail column agrees.
     fn text(&mut self, r: usize, c: usize, s: &str) {
-        for (i, ch) in s.chars().enumerate() {
-            self.put(r, c + i, ch);
+        let mut col = c;
+        for ch in s.chars() {
+            self.put(r, col, ch);
+            col += 1;
+            if ch.len_utf16() == 2 {
+                self.grow(r, col);
+                self.lit[r][col] = Some(Lit::Trail);
+                col += 1;
+            }
         }
     }
 
@@ -162,16 +182,44 @@ impl Canvas {
             .iter()
             .enumerate()
             .map(|(r, row)| {
-                let line: String = row
-                    .iter()
-                    .enumerate()
-                    .map(|(c, bits)| self.lit[r][c].unwrap_or_else(|| glyph_for(*bits, plain)))
-                    .collect();
-                line.trim_end().to_string()
+                let mut line = String::with_capacity(row.len());
+                for (c, bits) in row.iter().enumerate() {
+                    match self.lit[r][c] {
+                        Some(Lit::Char(ch)) => line.push(ch),
+                        Some(Lit::Trail) => {}
+                        None => line.push(glyph_for(*bits, plain)),
+                    }
+                }
+                js_trim_end(&line).to_string()
             })
             .collect::<Vec<String>>()
             .join("\n")
     }
+}
+
+/// Whether `ch` is whitespace to a JavaScript `\s`: the ECMAScript
+/// WhiteSpace and LineTerminator sets. This is not Rust's `White_Space`
+/// (which has NEXT LINE and lacks the byte order mark), and the renderer
+/// trims a row's end with this so a rail label ending in such a character
+/// trims exactly as it does in TypeScript.
+fn is_js_whitespace(ch: char) -> bool {
+    matches!(
+        ch,
+        '\t' | '\n' | '\u{0B}' | '\u{0C}' | '\r' | ' ' | '\u{A0}' | '\u{1680}' | '\u{2000}'
+            ..='\u{200A}'
+                | '\u{2028}'
+                | '\u{2029}'
+                | '\u{202F}'
+                | '\u{205F}'
+                | '\u{3000}'
+                | '\u{FEFF}'
+    )
+}
+
+/// `line` without its trailing JavaScript whitespace: the
+/// `replace(/\s+$/, '')` of the TypeScript canvas.
+fn js_trim_end(line: &str) -> &str {
+    line.trim_end_matches(is_js_whitespace)
 }
 
 // ---- measure model -------------------------------------------------
@@ -193,8 +241,11 @@ const VG: usize = 1;
 /// Horizontal gap cols between choice branches.
 const HG: usize = 3;
 
+/// The width of `s` in cells: its length in UTF-16 units, which is what
+/// the TypeScript `String.length` measures, so a label outside the Basic
+/// Multilingual Plane is two cells wide in both.
 fn width(s: &str) -> usize {
-    s.chars().count()
+    s.encode_utf16().count()
 }
 
 fn box_m(text: &str, is_terminal: bool, g: Glyphs) -> Measure {
@@ -282,6 +333,12 @@ fn seq_m(mut children: Vec<Measure>) -> Measure {
 }
 
 fn choice_m(mut branches: Vec<Measure>) -> Measure {
+    // A choice with no branches cannot come from a constructor or from
+    // JSON, but the enum can be built by hand; it renders as a bypass
+    // rather than indexing a branch that is not there.
+    if branches.is_empty() {
+        return skip_m();
+    }
     if branches.len() == 1 {
         return branches.remove(0);
     }

@@ -128,6 +128,12 @@ fn hline(x1: f64, x2: f64, y: f64) -> String {
     }
 }
 
+/// The length of `s` in UTF-16 units, the TypeScript `String.length`
+/// every box width is computed from.
+fn len16(s: &str) -> f64 {
+    s.encode_utf16().count() as f64
+}
+
 fn cap(x: f64, y: f64) -> String {
     format!(
         r#"<circle class="rr-cap" cx="{}" cy="{}" r="3"/>"#,
@@ -139,7 +145,7 @@ fn cap(x: f64, y: f64) -> String {
 // ---- node layouts --------------------------------------------------
 
 fn box_layout(text: &str, cls: &str, is_terminal: bool, href: Option<String>) -> Layout {
-    let w = (text.chars().count() as f64 * CHARW + 2.0 * PADX).max(MINW);
+    let w = (len16(text) * CHARW + 2.0 * PADX).max(MINW);
     let h = BOXH;
     let text = text.to_string();
     let cls = cls.to_string();
@@ -172,7 +178,7 @@ fn box_layout(text: &str, cls: &str, is_terminal: bool, href: Option<String>) ->
 }
 
 fn comment_layout(text: &str) -> Layout {
-    let w = (text.chars().count() as f64 * CHARW + 2.0 * PADX).max(MINW);
+    let w = (len16(text) * CHARW + 2.0 * PADX).max(MINW);
     let text = text.to_string();
     Layout {
         width: w,
@@ -242,6 +248,12 @@ fn seq_layout(mut children: Vec<Layout>) -> Layout {
 }
 
 fn choice_layout(mut branches: Vec<Layout>) -> Layout {
+    // A choice with no branches cannot come from a constructor or from
+    // JSON, but the enum can be built by hand; it renders as a bypass
+    // rather than indexing a branch that is not there.
+    if branches.is_empty() {
+        return skip_layout();
+    }
     if branches.len() == 1 {
         return branches.remove(0);
     }
@@ -520,7 +532,7 @@ pub fn model_to_svg(model: &GrammarModel) -> String {
                 esc(&e.token),
                 esc(&e.meaning)
             ));
-            let chars = (e.token.chars().count() + e.meaning.chars().count() + 5) as f64;
+            let chars = len16(&e.token) + len16(&e.meaning) + 5.0;
             page_w = page_w.max(PAD + chars * 7.5 + PAD);
             ly += 18.0;
         }
