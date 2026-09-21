@@ -23,7 +23,9 @@ is the `@tabnas/railroad` dev-only `file:` devDependency they use to
 role `@tabnas/debug` plays for introspection — a tool, not a grammar.
 
 There **is** a Go port in `go/` (`package tabnasrailroad`, plus
-`cmd/tabnas-railroad`). `ts/` stays **canonical**; `go/` tracks it.
+`cmd/tabnas-railroad`) and a Rust port in `rs/` (crate `tabnas-railroad`,
+plus the `tabnas-railroad` binary). `ts/` stays **canonical**; `go/` and
+`rs/` track it.
 
 ## Repository map
 
@@ -31,7 +33,9 @@ There **is** a Go port in `go/` (`package tabnasrailroad`, plus
 |---|---|
 | [`ts/`](ts/) | The canonical package — `@tabnas/railroad`. |
 | [`go/`](go/) | The Go port — `package tabnasrailroad` (`model.go`, `extract.go`, `svg.go`, `ascii.go`, `railroad.go`) + the `cmd/tabnas-railroad` CLI, mirroring the TS files one-for-one. `const VERSION` in `go/model.go` tracks the npm version, and `go/version_test.go` fails the build if it drifts from `ts/package.json`. |
-| [`test/spec/`](test/spec/) | Shared cross-runtime `*.tsv` fixtures (`node-text.tsv`, `node-ascii.tsv`), run by BOTH runtimes. See [`test/AGENTS.md`](test/AGENTS.md). |
+| [`rs/`](rs/) | The Rust port — crate `tabnas-railroad` (`src/model.rs`, `src/extract.rs`, `src/svg.rs`, `src/ascii.rs`, `src/lib.rs`) + the `tabnas-railroad` binary (`src/cli.rs`, behind the default `cli` feature), mirroring the TS files one-for-one. `pub const VERSION` in `rs/src/lib.rs` and `version` in `rs/Cargo.toml` track the npm version, and `rs/tests/version_test.rs` fails the build if either drifts. Depends on the `tabnas` crate via a `path` dependency (sibling checkout). See [`rs/AGENTS.md`](rs/AGENTS.md). |
+| [`test/spec/`](test/spec/) | Shared cross-runtime `*.tsv` fixtures (`node-text.tsv`, `node-ascii.tsv`), run by ALL THREE runtimes. See [`test/AGENTS.md`](test/AGENTS.md). |
+| [`ci/`](ci/) | Workflows and scripts **staged** for promotion into `.github/workflows/` by someone whose credentials can write there: `ci/workflows/rust.yml` (the Rust gate), `ci/workflows/docs.yml` (the prose gate), `ci/rust/run.sh` (what the Rust gate runs). |
 | [`ts/src/model.ts`](ts/src/model.ts) | The `RailroadNode` tagged union + `GrammarModel` envelope, node constructors (`Terminal`/`NonTerminal`/`Comment`/`Skip`/`Sequence`/`Choice`/`Optional`/`OneOrMore`/`ZeroOrMore`/`Diagram`), `toText`, `norm`, `nodeEqual`, `RailroadError`. Pure data — the interchange format. |
 | [`ts/src/extract.ts`](ts/src/extract.ts) | `extractGrammar(tn)` — reverse-maps a live instance's alt-based rule machine into the model. **The heart of the package.** |
 | [`ts/src/svg.ts`](ts/src/svg.ts) | `modelToSvg` / `renderNodeSvg` — vertical-flow SVG renderer. |
@@ -43,6 +47,7 @@ There **is** a Go port in `go/` (`package tabnasrailroad`, plus
 | [`examples/json-grammar.{svg,txt}`](examples/) | Sample output: the `@tabnas/json` grammar rendered, used by the READMEs. |
 | `ts/test/*.test.js` | Committed JS tests (not compiled): `railroad.test.js` (node-level + whole-model rule ordering), `grammar.test.js` (extraction + CLI against `@tabnas/json`), `doc-examples.test.js` (runs `// =>` README examples), `parity.test.js` (runs the shared `test/spec/*.tsv`). |
 | `go/*_test.go` | `railroad_test.go` / `grammar_test.go` / `parity_test.go` — the ports of the above, plus `TestParityWithTypeScriptModel` against the `go/testdata/ts-json-model.json` snapshot of the TS model. |
+| `rs/tests/*.rs` | `railroad_test.rs` / `grammar_test.rs` / `parity_test.rs` / `cli_test.rs` — the Rust ports of the above, plus `parity_model_test.rs` against the same `go/testdata/ts-json-model.json` snapshot (by value, by rule order and by bytes) and byte comparisons of the rendered json grammar against `examples/json-grammar.{svg,txt}`. |
 
 ## The tabnas engine dependency
 
@@ -61,6 +66,17 @@ engine is its one runtime tabnas dependency, declared via the standard
 - `@tabnas/debug` is a declared `file:` devDependency (the usual sibling),
   but nothing in `src/` or `test/` references it yet — there is no
   `debug.model()` composition test here.
+
+- Rust: `tabnas = { path = "../../parser/rs" }` in `rs/Cargo.toml`, with
+  `tabnas-json = { path = "../../json/rs" }` as the CLI's built-in grammar
+  (optional, behind the default `cli` feature) and again as a
+  dev-dependency for the test grammar, and
+  `tabnas-support = { path = "../../support/rs" }` as the dev-only fixture
+  runner. None of them is published, so `rs/Cargo.lock` records a
+  resolution naming them and there is no registry version to fall back
+  on — which is why `ci/rust/run.sh` runs cargo **without** `--locked`
+  and checks the lockfile by diffing it instead, exempting each sibling's
+  own version.
 
 Note the **inversion** versus a grammar plugin: a grammar repo lists
 `railroad` as a dev tool; here `railroad` lists `json` as the grammar it
@@ -157,6 +173,12 @@ The Go port ships the same CLI as `go/cmd/tabnas-railroad`, with
 above behave identically; verified byte-for-byte against the TS CLI for
 `--json/--svg/--ascii/--ascii-plain/--text` and bare-`-` stdin.
 
+The Rust port ships it as the `tabnas-railroad` binary
+(`rs/src/bin/tabnas-railroad.rs` over `tabnas_railroad::cli::run(argv,
+stdin, stdout, stderr) -> i32`, the same seam). Grammar mode resolves the
+same fixed table of built-in grammars as Go (`json`); render mode is fully
+general.
+
 ## Scope / known limitations
 
 This renderer only introspects **`@tabnas/parser`** (`Tabnas`) instances.
@@ -188,20 +210,33 @@ then `npm publish --access public` at the `package.json` version;
 `make publish-go V=x.y.z` injects `V` into `const VERSION` in `go/model.go`,
 commits, and tags `go/vX.Y.Z` (`make tags-go` lists those tags).
 
-Both runtimes bake in a `VERSION` constant — `const VERSION` in
-`go/model.go`, the exported `VERSION` in `ts/src/railroad.ts` — and both are
-guarded: `go/version_test.go` and `ts/test/version.test.js` read
-`ts/package.json` and fail (never skip) if the constant has drifted from it.
-Bump one by hand and the other must follow, or CI goes red.
+All three runtimes bake in a `VERSION` constant — `const VERSION` in
+`go/model.go`, the exported `VERSION` in `ts/src/railroad.ts`,
+`pub const VERSION` in `rs/src/lib.rs` (plus `version` in `rs/Cargo.toml`)
+— and all are guarded: `go/version_test.go`, `ts/test/version.test.js` and
+`rs/tests/version_test.rs` read `ts/package.json` and fail (never skip) if
+the constant has drifted from it. Bump one by hand and the others must
+follow, or CI goes red. `make version-rs V=x.y.z` does both Rust sites and
+regenerates `rs/Cargo.lock`.
 
 From `go/`: `go build ./...` and `go test ./...`.
+
+From `rs/`: `cargo build --all-targets` and `cargo test --all-targets`
+(`make build-rs` / `make test-rs` from the root; `test-rs` adds clippy).
+`--all-targets` does NOT run doctests; `ci/rust/run.sh` runs
+`cargo test --doc` as a separate arm for that reason, and is what the
+staged `ci/workflows/rust.yml` executes. The engine, `json` and `support`
+must be sibling checkouts.
 
 ## CI
 
 `.github/workflows/ci.yml` is a thin caller of the org-standard reusable
 workflow `tabnas/.github/.github/workflows/polyglot-ci.yml@main`, passing
 `deps: "parser debug json abnf"` (the upstream closure cloned as siblings).
-It runs on push/PR to `main`, and covers both the TS and Go sides. The
+It runs on push/PR to `main`, and covers both the TS and Go sides.
+It does not cover Rust: the Rust gate is the staged
+`ci/workflows/rust.yml`, which clones `parser`, `json` and `support` as
+siblings and runs `ci/rust/run.sh` (see `ci/README.md`). The
 workflow file is promoted by a maintainer via
 `tabnas/admin rollout/apply-ci-folders.sh` — session credentials cannot
 write `.github/workflows/*` (admin `DECISIONS.md` ADR-8), so edit it there,
@@ -220,6 +255,11 @@ order**.
 
 - **TS** iterates `Object.keys(rsm)`; a JS object literal keeps insertion
   order for free (`val, map, list, pair, elem` for `@tabnas/json`).
+- **Rust** asks the engine too, and gets insertion order for free: the
+  Rust engine holds rules in an `IndexMap`, `rule_specs()` walks it in
+  declaration order, and the Rust `@tabnas/json` document declares
+  `ruleOrder`, so the Rust model is `val, map, list, pair, elem` like TS.
+  `rs/tests/parity_model_test.rs` asserts that order against the snapshot.
 - **Go** asks the engine. `@tabnas/parser`'s Go port stamps every rule spec
   with a definition index (`RuleSpec.Def`) at registration and exposes the
   walk as `(*Tabnas).RuleNames()` / `Rules()`. `declaredUserRules` in
@@ -280,9 +320,13 @@ accepts the publish. Pushing a tag by hand is the orchestrator's path
 
 The steps, in order:
 
-1. Bump all **three** version sites together — `ts/package.json`, `VERSION`
-   in `ts/src/railroad.ts` and `const VERSION` in `go/model.go`. Drift is
-   caught by `ts/test/version.test.js` and `go/version_test.go`.
+1. Bump all **five** version sites together — `ts/package.json`, `VERSION`
+   in `ts/src/railroad.ts`, `const VERSION` in `go/model.go`, `VERSION` in
+   `rs/src/lib.rs` and `version` in `rs/Cargo.toml` (`rs/Cargo.lock`
+   carries the crate version too and is regenerated by any cargo command,
+   not hand-edited; **`make version-rs V=x.y.z` does the Rust sites at
+   once**). Drift is caught by `ts/test/version.test.js`,
+   `go/version_test.go` and `rs/tests/version_test.rs`.
 2. Verify against the **published** dependencies rather than your checkout.
    The release runner installs fresh from the registry; a working tree
    usually does not, so reproduce that before believing anything:

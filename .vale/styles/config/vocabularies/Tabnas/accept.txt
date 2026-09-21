@@ -14,10 +14,12 @@
 [Dd]edup
 [Dd]edups
 [Dd]ev
+[Ee]num
 [Ii]nlined
 [Jj]son
 [Jj]sonic
 [Ll]exer
+[Ll]ockfile
 [Nn]onterminal
 [Nn]onterminals
 [Nn]pm

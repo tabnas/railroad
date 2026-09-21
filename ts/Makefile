@@ -1,4 +1,4 @@
-.PHONY: all build test clean build-ts test-ts clean-ts reset
+.PHONY: all build test clean build-ts test-ts clean-ts reset build-rs test-rs clean-rs
 
 all: build test
 
@@ -20,3 +20,14 @@ clean-ts:
 
 reset:
 	npm run reset
+
+# Rust (the crate in ../rs; the engine is a sibling checkout)
+build-rs:
+	cd ../rs && cargo build --all-targets
+
+test-rs:
+	cd ../rs && cargo test --all-targets && cargo test --doc
+	cd ../rs && cargo clippy --all-targets --all-features -- -D warnings
+
+clean-rs:
+	cd ../rs && cargo clean

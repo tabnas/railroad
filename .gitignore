@@ -150,3 +150,7 @@ vite.config.ts.timestamp-*
 
 # Written by the counts script while measuring, removed after.
 .vale-counts.ini
+
+# --- Rust ---
+# Cargo's build output for rs/ (Cargo.lock IS committed).
+target/
