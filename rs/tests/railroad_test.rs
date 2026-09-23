@@ -452,5 +452,5 @@ fn accessors_read_each_shape() {
 
 #[test]
 fn version_is_exported() {
-    assert_eq!(tabnas_railroad::VERSION, "0.3.6");
+    assert_eq!(tabnas_railroad::VERSION, "0.3.7");
 }

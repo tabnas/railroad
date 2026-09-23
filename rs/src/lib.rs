@@ -58,7 +58,7 @@ mod readme_examples {}
 /// release orchestrator rewrites both, and `tests/version_test.rs` fails
 /// the build if they drift. Mirrors `VERSION` in `ts/src/railroad.ts`
 /// and `const VERSION` in `go/model.go`.
-pub const VERSION: &str = "0.3.6";
+pub const VERSION: &str = "0.3.7";
 
 /// The key under which the plugin marks the instance (retrieve the mark
 /// with `parser.decoration::<RailroadDecoration>(DECORATION_NAME)`).
