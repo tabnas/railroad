@@ -50,7 +50,7 @@ sequences run top-to-bottom, choices fan out sideways, optional /
 repetition rails run on the side.
 
 This package is itself a **dev tool the other tabnas repos depend on**: it
-is the `@tabnas/railroad` dev-only `file:` devDependency they use to
+is the `@tabnas/railroad` dev-only `"*"` devDependency they use to
 (re)generate the `ts/doc/grammar.{svg,txt}` README diagrams. It is the same
 role `@tabnas/debug` plays for introspection — a tool, not a grammar.
 
@@ -67,7 +67,7 @@ plus the `tabnas-railroad` binary). `ts/` stays **canonical**; `go/` and
 | [`go/`](go/) | The Go port — `package tabnasrailroad` (`model.go`, `extract.go`, `svg.go`, `ascii.go`, `railroad.go`) + the `cmd/tabnas-railroad` CLI, mirroring the TS files one-for-one. `const VERSION` in `go/model.go` tracks the npm version, and `go/version_test.go` fails the build if it drifts from `ts/package.json`. |
 | [`rs/`](rs/) | The Rust port — crate `tabnas-railroad` (`src/model.rs`, `src/extract.rs`, `src/svg.rs`, `src/ascii.rs`, `src/lib.rs`) + the `tabnas-railroad` binary (`src/cli.rs`, behind the default `cli` feature), mirroring the TS files one-for-one. `pub const VERSION` in `rs/src/lib.rs` and `version` in `rs/Cargo.toml` track the npm version, and `rs/tests/version_test.rs` fails the build if either drifts. Depends on the `tabnas` crate via a `path` dependency (sibling checkout). See [`rs/AGENTS.md`](rs/AGENTS.md). |
 | [`test/spec/`](test/spec/) | Shared cross-runtime `*.tsv` fixtures (`node-text.tsv`, `node-ascii.tsv`), run by ALL THREE runtimes. See [`test/AGENTS.md`](test/AGENTS.md). |
-| [`ci/`](ci/) | Workflows and scripts **staged** for promotion into `.github/workflows/` by someone whose credentials can write there: `ci/workflows/rust.yml` (the Rust gate), `ci/workflows/docs.yml` (the prose gate), `ci/rust/run.sh` (what the Rust gate runs). |
+| [`ci/`](ci/) | `ci/rust/run.sh`, what the Rust gate (`.github/workflows/rust.yml`) runs, and the staging area for workflow changes (see `ci/README.md`). |
 | [`ts/src/model.ts`](ts/src/model.ts) | The `RailroadNode` tagged union + `GrammarModel` envelope, node constructors (`Terminal`/`NonTerminal`/`Comment`/`Skip`/`Sequence`/`Choice`/`Optional`/`OneOrMore`/`ZeroOrMore`/`Diagram`), `toText`, `norm`, `nodeEqual`, `RailroadError`. Pure data — the interchange format. |
 | [`ts/src/extract.ts`](ts/src/extract.ts) | `extractGrammar(tn)` — reverse-maps a live instance's alt-based rule machine into the model. **The heart of the package.** |
 | [`ts/src/svg.ts`](ts/src/svg.ts) | `modelToSvg` / `renderNodeSvg` — vertical-flow SVG renderer. |
@@ -84,20 +84,29 @@ plus the `tabnas-railroad` binary). `ts/` stays **canonical**; `go/` and
 ## The tabnas engine dependency
 
 This renderer introspects **`@tabnas/parser`** (`Tabnas`) instances, so the
-engine is its one runtime tabnas dependency, declared via the standard
-**sibling checkout** dev model:
+engine is its one runtime tabnas dependency. The TypeScript and Go halves
+take it, and every other tabnas dependency, at **published** versions
+from the npm registry and the Go module proxy; only the Rust crate uses
+sibling checkouts:
 
-- `@tabnas/parser` is the `peerDependency` (npm >=7 / Node >=24
-  auto-installs it; `engines.node` is `">=24"`) and is **also** a `file:`
-  devDependency for local builds — both currently pinned to
-  `file:../../parser/ts` in `ts/package.json`.
-- `@tabnas/json` is a **dev-only** `file:` devDependency used as the **test
+- `@tabnas/parser` is the `peerDependency` (`">=0"`; npm >=7 / Node >=24
+  auto-installs it; `engines.node` is `">=24"`) and is **also** a `"*"`
+  devDependency for local builds, so `npm install` in `ts/` resolves it
+  from the registry.
+- `@tabnas/json` is a **dev-only** `"*"` devDependency used as the **test
   grammar**: the suite installs it on a `Tabnas` instance and asserts the
   extracted model/SVG/ASCII. It is the package's known-good fixture
   grammar, not a runtime dep.
-- `@tabnas/debug` is a declared `file:` devDependency (the usual sibling),
-  but nothing in `src/` or `test/` references it yet — there is no
-  `debug.model()` composition test here.
+- `@tabnas/support` is a **dev-only** `"*"` devDependency: the shared
+  fixture loader and runner `ts/test/parity.test.js` uses.
+- `@tabnas/debug` is a declared `"*"` devDependency, but nothing in `src/`
+  or `test/` references it yet — there is no `debug.model()` composition
+  test here.
+- Go: `go/go.mod` requires `github.com/tabnas/parser/go`,
+  `github.com/tabnas/json/go` (the built-in grammar of
+  `cmd/tabnas-railroad`, and the test grammar) and
+  `github.com/tabnas/support/go` (tests only) at published versions, with
+  no `replace`, and `go/go.sum` is committed.
 
 - Rust: `tabnas = { path = "../../parser/rs" }` in `rs/Cargo.toml`, with
   `tabnas-json = { path = "../../json/rs" }` as the CLI's built-in grammar
@@ -112,9 +121,10 @@ engine is its one runtime tabnas dependency, declared via the standard
 
 Note the **inversion** versus a grammar plugin: a grammar repo lists
 `railroad` as a dev tool; here `railroad` lists `json` as the grammar it
-renders in tests. Clone `parser` and `json` (and the rest of the closure
-for CI) as siblings of this repo and build their TS first; CI does this for
-you (see below).
+renders in tests. The TypeScript and Go sides need no sibling checkout;
+the Rust crate needs `parser`, `json` and `support` cloned beside this
+repo. CI clones its `deps` as siblings and builds against them (see
+below).
 
 ## How extraction works (the non-obvious core)
 
@@ -224,7 +234,7 @@ against `@tabnas/json` only.
 From `ts/`:
 
 ```bash
-npm install            # auto-installs the @tabnas/parser peer; resolves file: siblings
+npm install            # resolves every @tabnas devDependency from the registry
 npm run build          # tsc --build src  (emits dist/)
 npm test               # node --enable-source-maps --test test/**/*.test.js
 ```
@@ -256,27 +266,25 @@ From `go/`: `go build ./...` and `go test ./...`.
 From `rs/`: `cargo build --all-targets` and `cargo test --all-targets`
 (`make build-rs` / `make test-rs` from the root; `test-rs` adds clippy).
 `--all-targets` does NOT run doctests; `ci/rust/run.sh` runs
-`cargo test --doc` as a separate arm for that reason, and is what the
-staged `ci/workflows/rust.yml` executes. The engine, `json` and `support`
+`cargo test --doc` as a separate arm for that reason, and is what
+`.github/workflows/rust.yml` executes. The engine, `json` and `support`
 must be sibling checkouts.
 
 ## CI
 
 `.github/workflows/ci.yml` is a thin caller of the org-standard reusable
 workflow `tabnas/.github/.github/workflows/polyglot-ci.yml@main`, passing
-`deps: "parser debug json abnf"` (the upstream closure cloned as siblings).
+`deps: "parser support debug json"` (the upstream closure cloned as siblings).
 It runs on push/PR to `main`, and covers both the TS and Go sides.
-It does not cover Rust: the Rust gate is the staged
-`ci/workflows/rust.yml`, which clones `parser`, `json` and `support` as
-siblings and runs `ci/rust/run.sh` (see `ci/README.md`). The
-workflow file is promoted by a maintainer via
-`tabnas/admin rollout/apply-ci-folders.sh` — session credentials cannot
-write `.github/workflows/*` (admin `DECISIONS.md` ADR-8), so edit it there,
-not here. `.github/workflows/release.yml` handles releases.
+It does not cover Rust: the Rust gate is `.github/workflows/rust.yml`,
+which clones `parser`, `json` and `support` as siblings and runs
+`ci/rust/run.sh`. `.github/workflows/docs.yml` is the prose gate. How
+workflow changes are made is in `ci/README.md` (admin `DECISIONS.md`
+ADR-8). `.github/workflows/release.yml` handles releases.
 
-The `@tabnas/json` clone is what makes the grammar-extraction and CLI tests
-runnable in CI; `npm test` includes them because `json` is a `file:`
-devDependency.
+`npm test` includes the grammar-extraction and CLI tests because
+`@tabnas/json` is a devDependency. In CI the shared workflow links the
+`json` clone over the registry copy, so they run against json's `main`.
 
 ## Rule order
 
