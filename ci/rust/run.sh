@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Rust port gate. Kept in one script so local and hosted validation cannot
-# quietly drift apart: ci/workflows/rust.yml runs this file, and so can
-# you. `make test-rs` is the fast inner loop; this is the full gate.
+# quietly drift apart: .github/workflows/rust.yml runs this file, and so
+# can you. `make test-rs` is the fast inner loop; this is the full gate.
 #
 # The engine, the json grammar and the support crate are PATH
 # DEPENDENCIES on sibling checkouts (rs/Cargo.toml: `../../parser/rs`,
