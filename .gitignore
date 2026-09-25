@@ -154,3 +154,5 @@ vite.config.ts.timestamp-*
 # --- Rust ---
 # Cargo's build output for rs/ (Cargo.lock IS committed).
 target/
+
+.DS_Store
