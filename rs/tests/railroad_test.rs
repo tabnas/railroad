@@ -452,5 +452,8 @@ fn accessors_read_each_shape() {
 
 #[test]
 fn version_is_exported() {
-    assert_eq!(tabnas_railroad::VERSION, "0.3.7");
+    // Compared with the crate's own manifest rather than a literal, which
+    // would go stale at every release; tests/version_test.rs checks that
+    // the manifest agrees with ts/package.json.
+    assert_eq!(tabnas_railroad::VERSION, env!("CARGO_PKG_VERSION"));
 }
