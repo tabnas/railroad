@@ -36,9 +36,9 @@ cli = ["dep:tabnas-json"]
 [dependencies]
 # The engine is consumed as a SIBLING CHECKOUT, the standard tabnas
 # development model: clone https://github.com/tabnas/parser next to this
-# repo. The `tabnas` crate is not published, so there is no registry
-# version to fall back on.
-tabnas = { path = "../../parser/rs" }
+# repo. The engine's package is `tabnas-parser` (its library keeps the name
+# `tabnas`); committed manifests stay path-only (admin ADR-21).
+tabnas = { package = "tabnas-parser", path = "../../parser/rs" }
 # The json grammar is the CLI's built-in grammar (see `[features]`) and,
 # below, the test grammar. It is a sibling checkout too.
 tabnas-json = { path = "../../json/rs", optional = true }

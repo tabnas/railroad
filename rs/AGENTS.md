@@ -32,10 +32,14 @@ cargo clippy --all-targets --all-features -- -D warnings
 cargo fmt
 ```
 
-Three path dependencies on sibling checkouts, none published:
-`tabnas` (`../../parser/rs`), `tabnas-json` (`../../json/rs`, the CLI's
-built-in grammar and the test grammar) and, dev-only, `tabnas-support`
-(`../../support/rs`). `ci/rust/run.sh` refuses to run without all three.
+Three path dependencies on sibling checkouts: the engine, whose package
+is `tabnas-parser` and whose library is still imported as `tabnas`
+(`tabnas = { package = "tabnas-parser", path = "../../parser/rs" }`),
+`tabnas-json` (`../../json/rs`, the CLI's built-in grammar and the test
+grammar) and, dev-only, `tabnas-support` (`../../support/rs`). The engine
+and the grammar are on crates.io and `tabnas-support` is not, but the
+committed manifest stays path-only whatever the registry holds (admin
+ADR-21), so `ci/rust/run.sh` refuses to run without all three checkouts.
 
 ## What is pinned, and by what
 
