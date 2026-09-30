@@ -131,7 +131,7 @@ sibling checkouts:
   `github.com/tabnas/support/go` (tests only) at published versions, with
   no `replace`, and `go/go.sum` is committed.
 
-- Rust: `tabnas = { path = "../../parser/rs" }` in `rs/Cargo.toml`, with
+- Rust: `tabnas = { package = "tabnas-parser", path = "../../parser/rs" }` in `rs/Cargo.toml`, with
   `tabnas-json = { path = "../../json/rs" }` as the CLI's built-in grammar
   (optional, behind the default `cli` feature) and again as a
   dev-dependency for the test grammar, and

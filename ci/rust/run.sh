@@ -5,8 +5,8 @@
 #
 # The engine, the json grammar and the support crate are PATH
 # DEPENDENCIES on sibling checkouts (rs/Cargo.toml: `../../parser/rs`,
-# `../../json/rs`, `../../support/rs`), and none of them is published, so
-# there is no registry version to fall back on. Clone
+# `../../json/rs`, `../../support/rs`; the engine's package is
+# `tabnas-parser`), and committed manifests stay path-only. Clone
 # https://github.com/tabnas/parser, https://github.com/tabnas/json and
 # https://github.com/tabnas/support next to this repo before running.
 set -euo pipefail
@@ -79,7 +79,7 @@ fi
 lock_without_sibling_versions() {
   awk '
     /^\[\[package\]\]$/          { sib = 0 }
-    /^name = "tabnas"$/          { sib = 1 }
+    /^name = "tabnas-parser"$/   { sib = 1 }
     /^name = "tabnas-json"$/     { sib = 1 }
     /^name = "tabnas-support"$/  { sib = 1 }
     sib && /^version = /         { print "version = \"<sibling>\""; next }
