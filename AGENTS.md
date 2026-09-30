@@ -136,11 +136,12 @@ sibling checkouts:
   (optional, behind the default `cli` feature) and again as a
   dev-dependency for the test grammar, and
   `tabnas-support = { path = "../../support/rs" }` as the dev-only fixture
-  runner. None of them is published, so `rs/Cargo.lock` records a
-  resolution naming them and there is no registry version to fall back
-  on — which is why `ci/rust/run.sh` runs cargo **without** `--locked`
-  and checks the lockfile by diffing it instead, exempting each sibling's
-  own version.
+  runner. The engine and `tabnas-json` are on crates.io and
+  `tabnas-support` is not, but the committed manifest names all three by
+  path (admin ADR-21: committed manifests stay path-only), so
+  `rs/Cargo.lock` records the sibling checkouts' own versions — which is
+  why `ci/rust/run.sh` runs cargo **without** `--locked` and checks the
+  lockfile by diffing it instead, exempting each sibling's own version.
 
 Note the **inversion** versus a grammar plugin: a grammar repo lists
 `railroad` as a dev tool; here `railroad` lists `json` as the grammar it

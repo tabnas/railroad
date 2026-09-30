@@ -57,10 +57,10 @@ jobs:
         with:
           path: railroad
 
-      # Sibling main, not a release: none of the crates is published, so
-      # this is the only resolution there is. It is also the one CI
-      # already uses for Go, so both ports are measured against the same
-      # engine.
+      # Sibling main, not a release: the committed manifest names the
+      # siblings by path (admin ADR-21), so this is the only resolution
+      # there is. It is also the one CI already uses for Go, so both
+      # ports are measured against the same engine.
       - name: Clone the sibling engine
         run: git clone --depth 1 https://github.com/tabnas/parser.git parser
       - name: Clone the sibling json grammar
