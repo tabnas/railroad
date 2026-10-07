@@ -5,9 +5,10 @@
 // at the repo root (see ../../test/AGENTS.md).
 //
 // The fixture loader, the escape codec, the `ERROR:` contract and the row
-// loop all come from @tabnas/support, whose Go half `go/parity_test.go`
-// uses to run the SAME files — so the two implementations cannot drift
-// without one of them going red, and neither can the two loaders.
+// loop all come from @tabnas/support, whose Go and Rust halves
+// `go/parity_test.go` and `rs/tests/parity_test.rs` use to run the SAME
+// files — so the implementations cannot drift without one of them going
+// red, and neither can the loaders.
 //
 // What is left here is only what is specific to railroad: which renderer a
 // fixture is for.
@@ -33,8 +34,8 @@ for (const spec of loadSpecDir(findSpecDir(__dirname))) {
   }
 
   makeRunner({
-    // The first column is the node's own JSON shape, which is what both
-    // runtimes marshal to and unmarshal from. The third is renderer
+    // The first column is the node's own JSON shape, which is what every
+    // runtime marshals to and unmarshals from. The third is renderer
     // options, when the renderer takes any.
     parse: (input, row) => {
       const opts = row.named('opts')

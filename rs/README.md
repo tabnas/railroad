@@ -111,15 +111,12 @@ takes any saved model. `tabnas-railroad -h` lists the flags.
 
 ## Install
 
-None of the tabnas crates is published to a registry, so the engine is
-consumed as a **sibling checkout**, the standard tabnas development
-model. Clone `https://github.com/tabnas/parser` next to this repository
-and point at it:
+The crate and the engine are published on crates.io. The engine's
+package is `tabnas-parser`, which is imported in code as `tabnas`, so add
+both:
 
-```toml
-[dependencies]
-tabnas = { path = "../parser/rs" }
-tabnas-railroad = { path = "../railroad/rs" }
+```bash
+cargo add tabnas-railroad tabnas-parser
 ```
 
 Both entries are needed: a crate's dependencies are not passed on to its
@@ -127,10 +124,15 @@ dependents, so `tabnas-railroad` alone does not put `tabnas` in your
 extern prelude.
 
 The `cli` feature, on by default, builds the command and takes the
-`tabnas-json` crate from `../json/rs` for its built-in grammar. A library
+`tabnas-json` crate for its built-in grammar. A library
 consumer that wants neither takes the crate with
-`default-features = false`. The test suite needs `../json/rs` and
-`../support/rs` as siblings too.
+`default-features = false`.
+
+In this repository, `Cargo.toml` takes its tabnas crates from sibling
+checkouts by path instead, `../parser/rs` and `../json/rs`, and the test
+suite needs `../support/rs` as a sibling too.
+The release workflow swaps those paths for crates.io versions when it
+publishes this crate.
 
 ## Differences from the canonical TypeScript
 

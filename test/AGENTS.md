@@ -14,7 +14,7 @@ Blank lines are skipped, and so are comment lines — a line starting with
 
 | Column | Meaning |
 |---|---|
-| `node` | A railroad node, in the node's own JSON shape — exactly what both runtimes marshal to and unmarshal from. Escapes `\n` `\r` `\t` `\\` are decoded. |
+| `node` | A railroad node, in the node's own JSON shape — exactly what every runtime marshals to and unmarshals from. Escapes `\n` `\r` `\t` `\\` are decoded. |
 | `text` *or* `ascii` | See below. |
 | `opts` | Optional JSON object of renderer options. |
 
@@ -62,10 +62,10 @@ well-formedness and layout invariants, not pixel-identical markup.
 ## Rules
 
 - Prefer adding a fixture here over a one-off in-language assertion when a
-  case is expressible as node → rendering. That is what keeps the two
+  case is expressible as node → rendering. That is what keeps the
   runtimes honest against each other.
-- TypeScript is canonical. If the two runtimes disagree, the TS behaviour is
-  the expected value — unless Go has exposed a genuine TS defect, in which
+- TypeScript is canonical. If the runtimes disagree, the TS behaviour is the
+  expected value — unless another port has exposed a genuine TS defect, in which
   case fix TS first and pin the corrected behaviour here.
 - A new fixture must pass in ALL THREE runtimes: run `go test ./...` (from
   `go/`), `cargo test --all-targets` (from `rs/`) and `npm test` (from
