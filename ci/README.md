@@ -26,7 +26,8 @@ Both workflows staged here have been promoted and now live in
 
 - **`rust.yml`**, the Rust gate. It checks this repository out beside
   fresh clones of `parser`, `json` and `support` (the crate's three
-  unpublished path dependencies), installs the MSRV pinned in
+  path dependencies: all three are on crates.io, but the committed
+  manifest names them by path), installs the MSRV pinned in
   `rs/Cargo.toml`, and runs `rust/run.sh`: format check, build, tests,
   doctests, clippy with warnings denied, and a lockfile check that exempts
   only the siblings' own versions. The script is the whole gate, so a local

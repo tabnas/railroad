@@ -136,9 +136,8 @@ sibling checkouts:
   (optional, behind the default `cli` feature) and again as a
   dev-dependency for the test grammar, and
   `tabnas-support = { path = "../../support/rs" }` as the dev-only fixture
-  runner. The engine and `tabnas-json` are on crates.io and
-  `tabnas-support` is not, but the committed manifest names all three by
-  path (admin ADR-21: committed manifests stay path-only), so
+  runner. All three are on crates.io, but the committed manifest names
+  them by path (admin ADR-21: committed manifests stay path-only), so
   `rs/Cargo.lock` records the sibling checkouts' own versions — which is
   why `ci/rust/run.sh` runs cargo **without** `--locked` and checks the
   lockfile by diffing it instead, exempting each sibling's own version.
@@ -269,9 +268,10 @@ npm test               # node --enable-source-maps --test test/**/*.test.js
 missing `dist/` makes the suite fail or run old code). `npm run reset`
 (`clean && npm i && build && test`) is the from-clean path.
 
-The repo-root [`Makefile`](Makefile) drives **both** runtimes:
-`make build|test|clean` fan out to `build-ts`/`build-go`,
-`test-ts`/`test-go`, `clean-ts`/`clean-go`. `make publish-ts` runs the tests
+The repo-root [`Makefile`](Makefile) drives **all three** runtimes:
+`make build|test|clean` fan out to `build-ts`/`build-go`/`build-rs`,
+`test-ts`/`test-go`/`test-rs`, `clean-ts`/`clean-go`/`clean-rs`.
+`make publish-ts` runs the tests
 then `npm publish --access public` at the `package.json` version;
 `make publish-go V=x.y.z` injects `V` into `const VERSION` in `go/model.go`,
 commits, and tags `go/vX.Y.Z` (`make tags-go` lists those tags).
@@ -315,10 +315,11 @@ its admin `rollout/workflows/` template where it has one, or the next
 
 ## Rule order
 
-The two runtimes produce **byte-identical** ASCII and SVG for the same
+The three runtimes produce **byte-identical** ASCII and SVG for the same
 `GrammarModel` — verified by feeding the TS-extracted model through the Go
-renderers — and both now put rules in the model in **grammar declaration
-order**.
+renderers, and by `rs/tests/grammar_test.rs`, which holds the Rust output
+to the TypeScript examples — and all three put rules in the model in
+**grammar declaration order**.
 
 - **TS** iterates `Object.keys(rsm)`; a JS object literal keeps insertion
   order for free (`val, map, list, pair, elem` for `@tabnas/json`).
@@ -414,12 +415,14 @@ The steps, in order:
    suite then passes against unreleased code while appearing to verify the
    published one. Reinstalling is the part that matters.
 
-   One thing a clean install does **not** isolate:
-   `ts/test/doc-examples.test.*` resolves `@tabnas/*` by filesystem path
-   (`const TABNAS = path.join(REPO, '..')`), not through `node_modules`. If
-   unbuilt sibling checkouts sit beside this repo, those blocks fail with
-   `MODULE_NOT_FOUND` no matter what you installed — build the siblings, or
-   verify somewhere they are absent.
+   The clean install covers the doc examples too:
+   `ts/test/doc-examples.test.*` resolves a doc example's `require`
+   through `node_modules` first, and only a `@tabnas/*` package that is
+   not installed falls back to the sibling checkout `../<x>/ts`
+   (`const TABNAS = path.join(REPO, '..')`), with `@tabnas/railroad` itself
+   served from this repository's `ts/`. The tested examples name only
+   `@tabnas/json` and `@tabnas/parser`, installed devDependencies, and
+   `@tabnas/railroad`, so none of them reaches a sibling checkout.
 
    `npm test` already compiles here: `ts/package.json` sets `pretest` to
    `npm run build`, which npm runs automatically. No separate build step is
@@ -433,13 +436,17 @@ The steps, in order:
    ```bash
    (
      cd go
-     go mod edit -json | grep -q '"Replace": null' || { echo 'go.mod has a replace'; exit 1; }
+     go mod edit -json | jq -e '.Replace == null' >/dev/null || { echo 'go.mod has a replace'; exit 1; }
      GOWORK=off go test -count=1 ./...
    )
    ```
 
    `-count=1` because shared fixtures live outside the Go module, so a
-   changed corpus does not invalidate the test cache.
+   changed corpus does not invalidate the test cache. The check asks `jq`,
+   not `grep`: current Go leaves the `Replace` key out when there is no
+   replace, where older Go printed `"Replace": null`, and `jq` reads a
+   missing key as null, so the check passes on a clean `go.mod` and fails
+   on a replace either way.
 3. **Merge the bump through a reviewed PR.** That is the house convention —
    `CONTRIBUTING.md` squash-merges PRs and takes the title as the commit
    message — and what `release.yml`'s own header describes. A direct push to

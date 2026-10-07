@@ -6,9 +6,10 @@ package tabnasrailroad
 // `test/spec/*.tsv` fixtures at the repo root (see ../test/AGENTS.md).
 //
 // The fixture loader, the escape codec, the ERROR: contract and the row
-// loop all come from github.com/tabnas/support/go, whose TypeScript half
-// ts/test/parity.test.js uses to run the SAME files — so the two renderers
-// cannot drift without one going red, and neither can the two loaders.
+// loop all come from github.com/tabnas/support/go, whose TypeScript and
+// Rust halves ts/test/parity.test.js and rs/tests/parity_test.rs use to run
+// the SAME files — so the renderers cannot drift without one going red, and
+// neither can the loaders.
 //
 // What is left here is only what is specific to railroad: which renderer a
 // fixture is for.
@@ -47,7 +48,7 @@ func TestSpec(t *testing.T) {
 
 		support.Runner{
 			// The first column is the node's own JSON shape, which is what
-			// both runtimes marshal to and unmarshal from. The third is
+			// every runtime marshals to and unmarshals from. The third is
 			// renderer options, when the renderer takes any.
 			ParseRow: func(input string, row *support.Row) (any, error) {
 				node := &RailroadNode{}

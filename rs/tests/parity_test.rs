@@ -72,8 +72,8 @@ fn every_fixture_is_discovered() {
     }
 }
 
-/// The first column is the node's own JSON shape, which is what both
-/// runtimes marshal to and unmarshal from. The third is renderer
+/// The first column is the node's own JSON shape, which is what every
+/// runtime marshals to and unmarshals from. The third is renderer
 /// options, when the renderer takes any.
 fn render_spec(kind: &str, input: &str, row: &Row) -> Result<Value, Failure> {
     let node = RailroadNode::from_json(input).map_err(|error| Failure::message(error.message))?;
